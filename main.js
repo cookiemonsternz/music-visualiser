@@ -2,18 +2,21 @@ import * as THREE from 'three';
 // Import TSL (Three Shader Language) utilities for GPU computations
 import { Fn, uniform, texture, instanceIndex, float, hash, vec3, storage, If } from 'three/tsl';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-//import Stats from 'three/addons/libs/stats.module.js';
-//import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
+import Stats from 'three/addons/libs/stats.module.js';
+import { GUI } from 'three/addons/libs/lil-gui.module.min.js';
 
-const particleCount = 1000000;
+const particleCount = 9000000;
 
 const gravity = uniform(vec3(0, -0.001, 0));
-const bounce = uniform(0.8);
+const bounce = uniform(2.);
 const size = uniform(0.05);
 
 
 let camera, scene, renderer;
+let controls, stats;
 let computeParticles;
+
+const timestamps = document.getElementById('timestamps');
 
 function init() {
     // basic scene
@@ -89,9 +92,9 @@ function init() {
     particleMaterial.transparent = true;
 
     // create particle mesh
-    const particles = new THREE.Mesh(new THREE.SphereGeometry(1, 8, 8), particleMaterial);
+    const particles = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), particleMaterial);
     particles.count = particleCount;
-    particles.frustumCulled = true;
+    particles.frustumCulled = false;
     scene.add(particles);
 
     // visual helpers
@@ -106,6 +109,9 @@ function init() {
 
     document.body.appendChild(renderer.domElement);
 
+    stats = new Stats();
+    document.body.appendChild(stats.dom);
+
     renderer.computeAsync(computeInit);
 
     
@@ -115,9 +121,11 @@ function init() {
     controls.maxDistance = 200;
     controls.target.set(0, 0, 0);
     controls.update();
+
 }
 
 async function animate() {
+    stats.update();
     // compute particles
     await renderer.computeAsync(computeParticles);
 
