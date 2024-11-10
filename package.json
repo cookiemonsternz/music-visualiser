@@ -1,5 +1,8 @@
 {
   "devDependencies": {
     "vite": "^5.4.10"
+  },
+  "dependencies": {
+    "web-audio-beat-detector": "^8.2.18"
   }
 }
