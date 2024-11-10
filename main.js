@@ -12,31 +12,38 @@ import {
     vec3,
     storage,
     If,
+    pass,
 } from "three/tsl";
+import { bloom } from "three/addons/tsl/display/BloomNode.js";
+import { dof } from 'three/addons/tsl/display/DepthOfFieldNode.js';
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import Stats from "three/addons/libs/stats.module.js";
 import { GUI } from "three/addons/libs/lil-gui.module.min.js";
 
-const particleCount = 8300000;
+const particleCount = 30000;
 // attractors buffer size + other stuff
 // Keep as low as possible bc it loops this many times on the particle shader
 
 const gravity = uniform(vec3(0, 0, 0));
 const damping = uniform(0.9);
-const size = uniform(0.1);
+const size = uniform(0.5);
+
+const timeScale = uniform(1.0);
 
 // temp attractor values
 const attractorPosition = uniform(vec3(0, 0, 0));
-const attractorRadius = uniform(10000.0);
+const attractorRadius = uniform(1000.0);
 const attractorStrength = uniform(0.0);
 
-let camera, scene, renderer;
+let camera, scene, renderer, postProcessing;
 let stats, controls;
 let computeParticles, updateAttractor;
 
 let audioManager = null;
 
-function init() {
+async function init() {
+    await document.body.requestFullscreen();
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     /* #region  Basic Scene */
     const { innerWidth, innerHeight } = window;
     camera = new THREE.PerspectiveCamera(
@@ -45,10 +52,16 @@ function init() {
         0.1,
         1000
     );
-    camera.position.set(40, 50, 25);
+    camera.position.set(180, 25, 180);
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000000);
     /* #endregion */
+
+
+    // Load particle texture
+    const textureLoader = new THREE.TextureLoader();
+    const map = textureLoader.load('./static/particle.png');
+
 
     // create storage buffer,
     // used to store particle properties
@@ -63,11 +76,14 @@ function init() {
         );
     };
 
+
+
     /* #region  Buffer Inits */
     // initialize buffers for position, velocity
     const positionBuffer = createBuffer(particleCount, 3);
     const velocityBuffer = createBuffer(particleCount, 3);
     const colorBuffer = createBuffer(particleCount, 3);
+    const transparentBuffer = createBuffer(particleCount, 1);
     // Attractor buffers
     const attractorPositionBuffer = createBuffer(1, 3);
     const attractorRadiusBuffer = createBuffer(1, 1);
@@ -81,6 +97,7 @@ function init() {
         // so we can set the value of the buffer attribute at that index
         const position = positionBuffer.element(instanceIndex);
         const color = colorBuffer.element(instanceIndex);
+        const transparent = transparentBuffer.element(instanceIndex);
         //const velocity = velocityBuffer.element(instanceIndex);
 
         const radius = hash(instanceIndex)
@@ -94,6 +111,7 @@ function init() {
         position.z = radius.mul(phi.cos());
 
         color.assign(vec3(1, 1, 1));
+        transparent.x = float(1);
     })().compute(particleCount);
 
     // Particle Update Compute Shader
@@ -102,6 +120,7 @@ function init() {
         const position = positionBuffer.element(instanceIndex);
         const velocity = velocityBuffer.element(instanceIndex);
         const color = colorBuffer.element(instanceIndex);
+        const transparent = transparentBuffer.element(instanceIndex);
 
         const attractorPositionB = attractorPositionBuffer.element(0);
         const attractorRadiusB = attractorRadiusBuffer.element(0);
@@ -128,13 +147,20 @@ function init() {
         // apply damping
         velocity.mulAssign(damping);
 
-        position.addAssign(velocity);
+        position.addAssign(velocity.mul(timeScale));
+
+        transparent.x = float(1).sub(position.length().div(80));
 
         color.assign(vec3(
             force.length().add(position.length().div(50)), 
             attractorStrengthB.mul(position.length()).div(1000), 
             velocity.length().add(hash(instanceIndex))
         ));
+        If(attractorStrengthB.lessThan(float(0)), () => {
+            color.assign(vec3(
+                1, 1, 1
+            ));
+        })        
     });
 
     // Update Attractor Compute Shader
@@ -159,13 +185,15 @@ function init() {
     /* #endregion */
 
     /* #region  Particle Material */
+    const textureNode = texture(map);
     const particleMaterial = new THREE.SpriteNodeMaterial();
-    particleMaterial.colorNode = colorBuffer.element(instanceIndex);
+    particleMaterial.colorNode = textureNode.mul(colorBuffer.element(instanceIndex));
     particleMaterial.positionNode = positionBuffer.toAttribute();
     particleMaterial.scaleNode = size;
     particleMaterial.depthWrite = false;
     particleMaterial.depthTest = true;
     particleMaterial.transparent = true;
+    particleMaterial.opacityNode = transparentBuffer.element(instanceIndex);
     /* #endregion */
 
     /* #region  Particle Mesh */
@@ -193,6 +221,7 @@ function init() {
     renderer.setSize(innerWidth, innerHeight);
     renderer.setAnimationLoop(animate);
     document.body.appendChild(renderer.domElement);
+
     /* #endregion */
 
     /* #region  FPS Counter */
@@ -207,6 +236,34 @@ function init() {
     /* #endregion */
     
     renderer.computeAsync(computeInit);
+
+    const scenePass = pass( scene, camera );
+    // ( node, strength, radius, threshold )
+    const processPass = bloom( scenePass, 1, 0.5, 0.4 );
+
+    const mergedPass = scenePass.add( processPass );
+    
+    postProcessing = new THREE.PostProcessing( renderer );
+    postProcessing.outputNode = mergedPass;
+
+}
+
+async function onHit(){
+    let scenePass = pass( scene, camera );
+    // depth buffer
+    const scenePassColor = scenePass.getTextureNode();
+    const scenePassViewZ = scenePass.getViewZNode();
+
+    const processPass = dof( scenePassColor, scenePassViewZ, 1, 0.01, 0.1 );
+    postProcessing = new THREE.PostProcessing( renderer );
+    postProcessing.outputNode = processPass;
+    // // wait 3 sec
+    // await new Promise((resolve) => setTimeout(resolve, 3000));
+    // console.log("done");
+    // // remove dof
+    // postProcessing = new THREE.PostProcessing( renderer );
+    // scenePass = pass( scene, camera );
+    // postProcessing.outputNode = scenePass;
 }
 
 async function animate() {
@@ -219,46 +276,53 @@ async function animate() {
     await renderer.computeAsync(computeParticles);
 
     // render
-    await renderer.renderAsync(scene, camera);
+    await postProcessing.renderAsync();
 
     if (audioManager !== null) {
         audioManager.update();
         //console.log(audioManager.frequencyData);
         // update strength
         //console.log(audioManager.frequencyData.low);
-        if (audioManager.frequencyData.low*100 > 90) {
+        if (audioManager.frequencyData.low*100 > 91) {
             console.log("highest");
-            attractorStrength.value = Math.round((audioManager.frequencyData.low) * 300);
-        } else if (audioManager.frequencyData.low*100 > 85) {
+            attractorStrength.value = -Math.round((audioManager.frequencyData.low) * 300);
+            //onHit();
+        } else if (audioManager.frequencyData.low*100 > 90) {
             console.log("high");
             attractorStrength.value = Math.round((audioManager.frequencyData.low) * 100);
-        } else if (audioManager.frequencyData.low*100  > 80) {
+        } else if (audioManager.frequencyData.low*100  > 89) {
             console.log("medium");
             attractorStrength.value = Math.round((audioManager.frequencyData.low) * 40);
         } else {
             attractorStrength.value = Math.round((audioManager.frequencyData.low) * 20);
         }
 
-        attractorStrength.value += Math.round((audioManager.frequencyData.mid) * 25 * (255/(audioManager.frequencyData.low, 1, 255).clamp(1, 255)));
+        attractorStrength.value += Math.round((audioManager.frequencyData.mid) * 40 * (255/(audioManager.frequencyData.low, 1, 255).clamp(1, 255)));
     }
+
+    // orbit camera
+    camera.position.x = Math.sin(performance.now() * 0.00005) * 60;
+    camera.position.z = Math.cos(performance.now() * 0.00005) * 60;
+    camera.lookAt(0, 0, 0);
 }
 
 
-document.body.addEventListener("auxclick", async () => {
+document.body.addEventListener("keydown", async () => {
     if (audioManager !== null) {
-    if (audioManager.isPlaying) {
-        audioManager.pause();
+        if (audioManager.isPlaying) {
+            audioManager.pause();
+        } else {
+            audioManager.play();
+        }
     } else {
-        audioManager.play();
-    }
-    } else {
+        init();
         audioManager = new AudioManager();
         await audioManager.loadAudio();
         audioManager.play();
     }
 });
 
-init();
+//init();
 
 /**
  * Returns a number whose value is limited to the given range.

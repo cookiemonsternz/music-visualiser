@@ -31,7 +31,7 @@ export default class AudioManager {
 
         // Song
         this.song = {
-            url: "./static/songs/Linkin Park Track 6.mp3",
+            url: "./static/songs/Shiny Chords.mp3",
             title: "Reprap Brapwrap"
         }
     }
