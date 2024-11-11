@@ -1,0 +1,18 @@
+#app {
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+#songInfo {
+    color: beige;
+    font-size: 20px;
+    padding-top: 10px;
+    padding-left: 50px;
+    padding-right: 50px;
+    padding-bottom: 10px;
+    background-color: aquamarine;
+}

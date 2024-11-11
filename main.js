@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import AudioManager from "./static/managers/audiomanager.js";
-import BPMManager from "./static/managers/bpmmanager.js";
+//import BPMManager from "./static/managers/bpmmanager.js";
 // Import TSL (Three Shader Language) utilities for GPU computations
 import {
     Fn,
@@ -15,12 +15,12 @@ import {
     pass,
 } from "three/tsl";
 import { bloom } from "three/addons/tsl/display/BloomNode.js";
-import { dof } from 'three/addons/tsl/display/DepthOfFieldNode.js';
+//import { lensflare } from 'three/addons/tsl/display/LensflareNode.js';
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import Stats from "three/addons/libs/stats.module.js";
-import { GUI } from "three/addons/libs/lil-gui.module.min.js";
+//import { GUI } from "three/addons/libs/lil-gui.module.min.js";
 
-const particleCount = 80000;
+const particleCount = 300000;
 // attractors buffer size + other stuff
 // Keep as low as possible bc it loops this many times on the particle shader
 
@@ -149,7 +149,9 @@ async function init() {
 
         position.addAssign(velocity.mul(timeScale));
 
-        transparent.x = float(1).sub(position.length().div(80));
+        transparent.x = float(1).sub(position.length().div(55));
+
+        //transparent.x = position.sub(camera.position).length().div(30);
 
         color.assign(vec3(
             force.length().add(position.length().div(50)), 
@@ -220,6 +222,10 @@ async function init() {
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(innerWidth, innerHeight);
     renderer.setAnimationLoop(animate);
+    renderer.domElement.style.position = "absolute";
+    renderer.domElement.style.top = "0";
+    renderer.domElement.style.left = "0";
+    renderer.domElement.style.zIndex = "-1";
     document.body.appendChild(renderer.domElement);
 
     /* #endregion */
@@ -239,9 +245,12 @@ async function init() {
 
     const scenePass = pass( scene, camera );
     // ( node, strength, radius, threshold )
+    //const dofPass = dof( scenePass.getTextureNode(), scenePass.getViewZNode(), 5, 1000.7, 0.01 );
     const processPass = bloom( scenePass, 1, 0.5, 0.4 );
-
+    //const process2Pass = scenePass.add( lensflare( scenePass ) );
     const mergedPass = scenePass.add( processPass );
+
+    
     
     postProcessing = new THREE.PostProcessing( renderer );
     postProcessing.outputNode = mergedPass;
@@ -283,27 +292,33 @@ async function animate() {
         //console.log(audioManager.frequencyData);
         // update strength
         //console.log(audioManager.frequencyData.low);
-        if (audioManager.frequencyData.low*100 > 91) {
+        if (audioManager.frequencyData.low*100 > audioManager.thresholds.highest) {
             console.log("highest");
             attractorStrength.value = -Math.round((audioManager.frequencyData.low) * 300);
-            //onHit();
-        } else if (audioManager.frequencyData.low*100 > 90) {
+            cameraUp();
+            audioManager.onHit('highest');
+        } else if (audioManager.frequencyData.low*100 > audioManager.thresholds.high) {
             console.log("high");
             attractorStrength.value = Math.round((audioManager.frequencyData.low) * 100);
-        } else if (audioManager.frequencyData.low*100  > 89) {
+            audioManager.onHit('high');
+        } else if (audioManager.frequencyData.low*100  > audioManager.thresholds.medium) {
             console.log("medium");
             attractorStrength.value = Math.round((audioManager.frequencyData.low) * 40);
+            audioManager.onHit('medium');
         } else {
             attractorStrength.value = Math.round((audioManager.frequencyData.low) * 20);
         }
-
         attractorStrength.value += Math.round((audioManager.frequencyData.mid) * 40 * (255/(audioManager.frequencyData.low, 1, 255).clamp(1, 255)));
     }
-
+    if(camera.fov < 70){
+        camera.fov += 0.25;
+        camera.updateProjectionMatrix();
+    }
     // orbit camera
-    //camera.position.x = Math.sin(performance.now() * 0.00005) * 60;
-    //camera.position.z = Math.cos(performance.now() * 0.00005) * 60;
-    //camera.lookAt(0, 0, 0);
+    //console.log(audioManager.frequencyData.low);
+    camera.position.x = Math.sin(performance.now() * ((audioManager.frequencyData.low, 0.01)/100).clamp(0, 1)) * 60;
+    camera.position.z = Math.cos(performance.now() * ((audioManager.frequencyData.low, 0.01)/100).clamp(0, 1)) * 60;
+    camera.lookAt(0, 0, 0);
 }
 
 
@@ -315,13 +330,19 @@ document.body.addEventListener("keydown", async () => {
             audioManager.play();
         }
     } else {
-        init();
         audioManager = new AudioManager();
-        await audioManager.loadAudio();
+        await audioManager.loadAudio(); 
+        init();
+        
         audioManager.play();
     }
 });
 
+
+function cameraUp() {
+    camera.fov = 25;
+    camera.updateProjectionMatrix();
+}
 //init();
 
 /**

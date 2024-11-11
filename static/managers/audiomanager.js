@@ -25,7 +25,7 @@ export default class AudioManager {
             medium: 89
         }
         this.thresholdMin = {
-            highest: 85, 
+            highest: 88, 
             high: 80,
             medium: 75
         }
@@ -50,6 +50,29 @@ export default class AudioManager {
             url: "./static/songs/Linkin Park Track 6.mp3",
             title: "Reprap Brapwrap"
         }
+    }
+
+    onHit(type) {
+        console.log('hit : ', type);
+        console.log(this.pad(Math.round(this.thresholds.highest), 2), this.pad(Math.round(this.thresholds.high), 2), this.pad(Math.round(this.thresholds.medium), 2));
+        if (type === 'highest') {
+            this.thresholds.highest = this.thresholdMax.highest;
+        } else if (type === 'high') {
+            this.thresholds.high = this.thresholdMax.high;
+        } else if (type === 'medium') {
+            this.thresholds.medium = this.thresholdMax.medium;
+        }
+        console.log(this.pad(Math.round(this.thresholds.highest), 2), this.pad(Math.round(this.thresholds.high), 2), this.pad(Math.round(this.thresholds.medium), 2));
+    }
+
+    lowerThresholds() {
+        for (let key in this.thresholds) {
+            this.thresholds[key] -= this.thresholdRate;
+            if (this.thresholds[key] < this.thresholdMin[key]) {
+                this.thresholds[key] = this.thresholdMin[key];
+            }
+        }
+        //console.log(this.pad(Math.round(this.thresholds.highest), 2), this.pad(Math.round(this.thresholds.high), 2), this.pad(Math.round(this.thresholds.medium), 2));
     }
 
     async loadAudio() {
@@ -163,6 +186,7 @@ export default class AudioManager {
         if (!this.isPlaying) return;
         this.collectFrequencyData();
         this.analyseFrequencyData();
+        this.lowerThresholds();
     }
 
     play() {
