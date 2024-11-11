@@ -20,7 +20,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import Stats from "three/addons/libs/stats.module.js";
 import { GUI } from "three/addons/libs/lil-gui.module.min.js";
 
-const particleCount = 30000;
+const particleCount = 80000;
 // attractors buffer size + other stuff
 // Keep as low as possible bc it loops this many times on the particle shader
 
@@ -42,7 +42,7 @@ let computeParticles, updateAttractor;
 let audioManager = null;
 
 async function init() {
-    await document.body.requestFullscreen();
+    //await document.body.requestFullscreen();
     await new Promise((resolve) => setTimeout(resolve, 1000));
     /* #region  Basic Scene */
     const { innerWidth, innerHeight } = window;
@@ -52,7 +52,7 @@ async function init() {
         0.1,
         1000
     );
-    camera.position.set(180, 25, 180);
+    camera.position.set(10, 0, 10);
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000000);
     /* #endregion */
@@ -209,8 +209,8 @@ async function init() {
     /* #endregion */
 
     // visual helpers
-    const helper = new THREE.GridHelper(60, 40, 0x303030, 0x303030);
-    scene.add(helper);
+    //const helper = new THREE.GridHelper(60, 40, 0x303030, 0x303030);
+    //scene.add(helper);
 
     /* #region  Renderer */
     renderer = new THREE.WebGPURenderer({
@@ -301,9 +301,9 @@ async function animate() {
     }
 
     // orbit camera
-    camera.position.x = Math.sin(performance.now() * 0.00005) * 60;
-    camera.position.z = Math.cos(performance.now() * 0.00005) * 60;
-    camera.lookAt(0, 0, 0);
+    //camera.position.x = Math.sin(performance.now() * 0.00005) * 60;
+    //camera.position.z = Math.cos(performance.now() * 0.00005) * 60;
+    //camera.lookAt(0, 0, 0);
 }
 
 

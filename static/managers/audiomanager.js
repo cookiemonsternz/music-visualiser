@@ -19,7 +19,23 @@ export default class AudioManager {
         }
         
 
-        
+        this.thresholds = {
+            highest: 91,
+            high: 90,
+            medium: 89
+        }
+        this.thresholdMin = {
+            highest: 85, 
+            high: 80,
+            medium: 75
+        }
+        this.thresholdMax = {
+            highest: 100,
+            high: 98,
+            medium: 95
+        }
+        this.thresholdRate = 0.1;
+
 
         // Audio
         this.audioAnalyser = null; // three.js audio analyser
@@ -31,7 +47,7 @@ export default class AudioManager {
 
         // Song
         this.song = {
-            url: "./static/songs/Shiny Chords.mp3",
+            url: "./static/songs/Linkin Park Track 6.mp3",
             title: "Reprap Brapwrap"
         }
     }
