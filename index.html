@@ -4,6 +4,9 @@
 		<meta charset="utf-8">
 		<title>My first three.js app</title>
 		<link rel="stylesheet" href="style.css">
+		<script src="//s3.amazonaws.com/scripting.com/code/includes/jquery-1.9.1.min.js"></script>
+		<link href="//s3.amazonaws.com/scripting.com/code/includes/bootstrap.css" rel="stylesheet">
+		<script src="//s3.amazonaws.com/scripting.com/code/includes/bootstrap.min.js"></script>
 	</head>
 	<body>
 		<div id="app">
@@ -12,24 +15,24 @@
 					<button id="loadLocalButton" class="sideBarButton">
 						<img src="https://img.icons8.com/ios/50/000000/folder-invoices.png" />
 					</button>
-					<button id="loadLinkButton" class="sideBarButton">
+					<button id="loadLinkButton" class="sideBarButton" onclick="loadLinkButton">
 						<img src="https://img.icons8.com/ios/50/000000/link.png" />
 					</button>
 				</div>
 				<div id="songInfo">
-					<p id="songTitle" class="songTitle">Song Title</p>
 					<div class="hBox" style="width: 100%;">
 						<button id="playButton">
 							<img id="albumCover" class="albumCover" src="https://via.placeholder.com/150" alt="Album Cover" />
 						</button>
-						<div class="vBox" id="timeDetails">
+						<div class="vBox" id="songDetails">
+							<p id="songTitle" class="songTitle">Song Title</p>
 							<div class="hBox">
 								<p id="songArtist" class="songInfo">Song Artist</p>
 								<p class="songInfo"> - </p>
 								<p id="songAlbum" class="songInfo">Song Album</p>
 							</div>
 							<input type="range" id="timeSlider" min="0" max="100" value="0" />
-							<div class="hBox">
+							<div class="hBox" id="durationHBox">
 								<p id="currentTime" class="songInfo">0:00</p>
 								<p class="songInfo"> / </p>
 								<p id="songDuration" class="songInfo">0:00</p>
@@ -39,15 +42,6 @@
 				</div>
 			</div>
 		</div>
-		<script type="importmap">
-			{
-				"imports": {
-					"three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.webgpu.js",
-					"three/tsl": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.webgpu.js",
-					"three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
-				}
-			}
-		</script>
 		<script type="module" src="/main.js"></script>
 	</body>
 </html>

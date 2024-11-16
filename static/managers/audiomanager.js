@@ -57,8 +57,10 @@ export default class AudioManager {
     }
 
     onHit(type) {
+        /*
         console.log('hit : ', type);
         console.log(this.pad(Math.round(this.thresholds.highest), 2), this.pad(Math.round(this.thresholds.high), 2), this.pad(Math.round(this.thresholds.medium), 2));
+        */
         if (type === 'highest') {
             this.thresholds.highest = this.thresholdMax.highest;
         } else if (type === 'high') {
@@ -66,7 +68,7 @@ export default class AudioManager {
         } else if (type === 'medium') {
             this.thresholds.medium = this.thresholdMax.medium;
         }
-        console.log(this.pad(Math.round(this.thresholds.highest), 2), this.pad(Math.round(this.thresholds.high), 2), this.pad(Math.round(this.thresholds.medium), 2));
+        //console.log(this.pad(Math.round(this.thresholds.highest), 2), this.pad(Math.round(this.thresholds.high), 2), this.pad(Math.round(this.thresholds.medium), 2));
     }
 
     lowerThresholds() {
@@ -79,7 +81,7 @@ export default class AudioManager {
         //console.log(this.pad(Math.round(this.thresholds.highest), 2), this.pad(Math.round(this.thresholds.high), 2), this.pad(Math.round(this.thresholds.medium), 2));
     }
 
-    async loadAudio() {
+    async loadAudio(audioUrl = this.song.url) {
         return new Promise((resolve, reject) => {
             this.audioListener = new THREE.AudioListener();
             this.audio = new THREE.Audio(this.audioListener);
@@ -92,7 +94,7 @@ export default class AudioManager {
             // load audio
             const audioLoader = new THREE.AudioLoader();
             audioLoader.load(
-                this.song.url, 
+                audioUrl, 
                 (buffer) => {
                     this.audio.setBuffer(buffer);
                     this.audio.setLoop(true);
