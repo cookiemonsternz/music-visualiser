@@ -48,7 +48,11 @@ export default class AudioManager {
         // Song
         this.song = {
             url: "./static/songs/Linkin Park Track 6.mp3",
-            title: "Reprap Brapwrap"
+            title: "Easier to Run",
+            artist: "Linkin Park",
+            album: "Meteora",
+            albumCover: "./static/album-covers/meteora.jpg",
+            duration: 0
         }
     }
 
@@ -79,7 +83,6 @@ export default class AudioManager {
         return new Promise((resolve, reject) => {
             this.audioListener = new THREE.AudioListener();
             this.audio = new THREE.Audio(this.audioListener);
-
             // create fft
             this.audioAnalyser = new THREE.AudioAnalyser(this.audio, this.fftSize);
 
@@ -95,6 +98,7 @@ export default class AudioManager {
                     this.audio.setLoop(true);
                     this.audio.setVolume(0.5);
                     this.audioContext = this.audio.context;
+                    this.song.duration = String(Math.floor(buffer.duration/60) + ":" + Math.floor(buffer.duration%60));
                     resolve();
                 },
                 undefined,

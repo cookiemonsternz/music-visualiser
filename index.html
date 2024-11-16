@@ -7,10 +7,36 @@
 	</head>
 	<body>
 		<div id="app">
-			<div id="songInfo">
-				<p id="songTitle">Song Title</p>
-				<p id="songArtist">Song Artist</p>
-				<p id="songAlbum">Song Album</p>
+			<div class="vBox">
+				<div id="sideBar" class="vBox" style="width:fit-content">
+					<button id="loadLocalButton" class="sideBarButton">
+						<img src="https://img.icons8.com/ios/50/000000/folder-invoices.png" />
+					</button>
+					<button id="loadLinkButton" class="sideBarButton">
+						<img src="https://img.icons8.com/ios/50/000000/link.png" />
+					</button>
+				</div>
+				<div id="songInfo">
+					<p id="songTitle" class="songTitle">Song Title</p>
+					<div class="hBox" style="width: 100%;">
+						<button id="playButton">
+							<img id="albumCover" class="albumCover" src="https://via.placeholder.com/150" alt="Album Cover" />
+						</button>
+						<div class="vBox" id="timeDetails">
+							<div class="hBox">
+								<p id="songArtist" class="songInfo">Song Artist</p>
+								<p class="songInfo"> - </p>
+								<p id="songAlbum" class="songInfo">Song Album</p>
+							</div>
+							<input type="range" id="timeSlider" min="0" max="100" value="0" />
+							<div class="hBox">
+								<p id="currentTime" class="songInfo">0:00</p>
+								<p class="songInfo"> / </p>
+								<p id="songDuration" class="songInfo">0:00</p>
+							</div>
+						</div>
+					</div>
+				</div>
 			</div>
 		</div>
 		<script type="importmap">
