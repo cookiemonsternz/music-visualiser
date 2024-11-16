@@ -20,7 +20,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import Stats from "three/addons/libs/stats.module.js";
 //import { GUI } from "three/addons/libs/lil-gui.module.min.js";
 
-const particleCount = 300000;
+const particleCount = 30000;
 // attractors buffer size + other stuff
 // Keep as low as possible bc it loops this many times on the particle shader
 
@@ -257,6 +257,7 @@ async function init() {
 
 }
 
+
 async function onHit(){
     let scenePass = pass( scene, camera );
     // depth buffer
@@ -330,14 +331,23 @@ document.body.addEventListener("keydown", async () => {
             audioManager.play();
         }
     } else {
-        audioManager = new AudioManager();
-        await audioManager.loadAudio(); 
         init();
         
         audioManager.play();
     }
 });
 
+
+await loadSong();
+async function loadSong() {
+    audioManager = new AudioManager();
+    await audioManager.loadAudio();
+    document.getElementById("songTitle").innerText = audioManager.song.title;
+    document.getElementById("songArtist").innerText = audioManager.song.artist;
+    document.getElementById("songAlbum").innerText = audioManager.song.album;
+    document.getElementById("albumCover").src = audioManager.song.albumCover;
+    document.getElementById("songDuration").innerText = audioManager.song.duration;
+}
 
 function cameraUp() {
     camera.fov = 25;
