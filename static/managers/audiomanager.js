@@ -36,7 +36,7 @@ export default class AudioManager {
         }
         this.thresholdRate = 0.1;
 
-
+        this.updatingSlider = false;
         // Audio
         this.audioAnalyser = null; // three.js audio analyser
         this.audioListener = null; // three.js audio listener
@@ -193,17 +193,36 @@ export default class AudioManager {
         this.collectFrequencyData();
         this.analyseFrequencyData();
         this.lowerThresholds();
+        document.getElementById("currentTime").innerText = this.formatTime(this.audio.context.currentTime);
+        document.getElementById("timeSlider").value = this.audio.context.currentTime / this.audio.buffer.duration * 100;
     }
 
+    formatTime(time) {
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+    }
+
+    setTime(percentage) {
+        if (!this.audio) return;
+        this.audio.context.currentTime = this.audio.buffer.duration * percentage / 100;
+    }
+    
     play() {
         if(!this.audio && !this.audio.buffer) return;
         this.audio.play();
         this.isPlaying = true;
+        document.getElementById('playPause').src = "https://img.icons8.com/?size=100&id=61012&format=png";
+        document.getElementById("app").style.opacity = 0.5;
+        document.getElementById("app").style.filter = "brightness(0.3)";
     }
 
     pause() {
         if(!this.audio) return;
         this.audio.pause();
         this.isPlaying = false;
+        document.getElementById('playPause').src = "https://img.icons8.com/?size=100&id=59862&format=png";
+        document.getElementById("app").style.opacity = 1;
+        document.getElementById("app").style.filter = "brightness(1)";
     }
 }

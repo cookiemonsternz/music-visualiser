@@ -24,7 +24,7 @@ import { cover } from "three/src/extras/TextureUtils.js";
 
 //import { GUI } from "three/addons/libs/lil-gui.module.min.js";
 
-const particleCount = 300000;
+let particleCount = 300000;
 // attractors buffer size + other stuff
 // Keep as low as possible bc it loops this many times on the particle shader
 
@@ -39,12 +39,13 @@ const attractorPosition = uniform(vec3(0, 0, 0));
 const attractorRadius = uniform(1000.0);
 const attractorStrength = uniform(0.0);
 
-let camera, scene, renderer, postProcessing;
+let camera, scene, renderer, postProcessing, pass1, pass2;
 let stats, controls;
 let computeParticles, updateAttractor;
 
 let audioManager = null;
 
+let doingProcessEffect = false;
 async function init() {
     //await document.body.requestFullscreen();
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -250,28 +251,25 @@ async function init() {
     //const dofPass = dof( scenePass.getTextureNode(), scenePass.getViewZNode(), 5, 1000.7, 0.01 );
     const processPass = bloom(scenePass, 1, 0.5, 0.4);
     //const process2Pass = scenePass.add( lensflare( scenePass ) );
-    const mergedPass = scenePass.add(processPass);
+    pass1 = scenePass.add(processPass);
+
+    const processPass2 = bloom(scenePass, 2, 0.3, 0.4);
+
+    pass2 = scenePass.add(processPass2);
 
     postProcessing = new THREE.PostProcessing(renderer);
-    postProcessing.outputNode = mergedPass;
+    postProcessing.outputNode = pass1;
 }
 
 async function onHit() {
-    let scenePass = pass(scene, camera);
-    // depth buffer
-    const scenePassColor = scenePass.getTextureNode();
-    const scenePassViewZ = scenePass.getViewZNode();
+    if (doingProcessEffect) return;
+    doingProcessEffect = true;
+    postProcessing.outputNode = pass2;
 
-    const processPass = dof(scenePassColor, scenePassViewZ, 1, 0.01, 0.1);
-    postProcessing = new THREE.PostProcessing(renderer);
-    postProcessing.outputNode = processPass;
-    // // wait 3 sec
-    // await new Promise((resolve) => setTimeout(resolve, 3000));
-    // console.log("done");
-    // // remove dof
-    // postProcessing = new THREE.PostProcessing( renderer );
-    // scenePass = pass( scene, camera );
-    // postProcessing.outputNode = scenePass;
+    await new Promise((resolve) => setTimeout(resolve, 800));
+
+    postProcessing.outputNode = pass1;
+    doingProcessEffect = false;
 }
 
 async function animate() {
@@ -339,12 +337,12 @@ async function animate() {
     camera.position.x =
         Math.sin(
             performance.now() *
-                ((audioManager.frequencyData.low, 0.01) / 100).clamp(0, 1)
+                ((audioManager.frequencyData.low, 0.03) / 100).clamp(0, 1)
         ) * 60;
     camera.position.z =
         Math.cos(
             performance.now() *
-                ((audioManager.frequencyData.low, 0.01) / 100).clamp(0, 1)
+                ((audioManager.frequencyData.low, 0.03) / 100).clamp(0, 1)
         ) * 60;
     camera.lookAt(0, 0, 0);
 }
@@ -365,20 +363,10 @@ document.body.addEventListener("keydown", async () => {
 });
 */
 
-async function loadSong() {
-    audioManager = new AudioManager();
-    await audioManager.loadAudio();
-    document.getElementById("songTitle").innerText = audioManager.song.title;
-    document.getElementById("songArtist").innerText = audioManager.song.artist;
-    document.getElementById("songAlbum").innerText = audioManager.song.album;
-    document.getElementById("albumCover").src = audioManager.song.albumCover;
-    document.getElementById("songDuration").innerText =
-        audioManager.song.duration;
-}
-
 function cameraUp() {
     camera.fov = 25;
     camera.updateProjectionMatrix();
+    onHit();
 }
 
 async function readFile(file) {
@@ -388,8 +376,6 @@ async function readFile(file) {
     await setSongDetails(file);
     await init();
     audioManager.play();
-    document.getElementById("app").style.opacity = 0.5;
-    document.getElementById("app").style.brightness = 0.5;
 }
 
 async function openDialogCommand(fileTypes) {
@@ -409,6 +395,13 @@ async function openDialogCommand(fileTypes) {
 async function loadLocalFile() {
     if (audioManager !== null) {
         audioManager.pause();
+    } else {
+        document.getElementById("songTitle").innerText = "Loading...";
+        document.getElementById("songArtist").innerText = "Loading...";
+        document.getElementById("songAlbum").innerText = "Loading...";
+        document.getElementById("albumCover").src = "./static/defaultAlbumCover.jpg";
+        document.getElementById("songDuration").innerText = "Loading...";
+        //document.getElementById("sliderContainer").style.display = "none";
     }
     openDialogCommand(".mp3,.wav,.flac,.m4a,.aac,.ogg,.aiff,.alac,.wma,.opus");
 }
@@ -511,16 +504,9 @@ async function getCoverArt(metadata) {
     return coverResult;
 }
 
-document.getElementById("loadLocalButton").addEventListener("click", () => {
-    loadLocalFile();
-});
-
-/* #region MusicBrainz API */
-const mbApi = new MusicBrainzApi({
-    appName: "Three.js Music Visualizer",
-    appVersion: "0.1.0",
-    appContactInfo: "christopherbbody@gmail.com",
-});
+function formatNumber(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
 
 /**
  * Returns a number whose value is limited to the given range.
@@ -542,3 +528,82 @@ String.prototype.toTitleCase = function () {
         return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
     });
 };
+
+
+/* #region  Event Listeners */
+document.getElementById("loadLocalButton").addEventListener("click", () => {
+    loadLocalFile();
+});
+
+document.getElementById("loadLocalButton").addEventListener("mouseover", () => {
+    document.getElementById("app").style.opacity = 1;
+    document.getElementById("app").style.filter = "brightness(1)";
+});
+
+document.getElementById("loadLocalButton").addEventListener("mouseout", () => {
+    document.getElementById("app").style.opacity = 0.5;
+    document.getElementById("app").style.filter = "brightness(0.3)";
+}  );
+
+document.getElementById("playPause").addEventListener("click", () => {
+    if (audioManager !== null) {
+        if (audioManager.isPlaying) {
+            audioManager.pause();
+        } else {
+            audioManager.play();
+        }
+    }
+});
+
+document.getElementById("playPause").addEventListener("mouseover", () => {
+    document.getElementById("app").style.opacity = 1;
+    document.getElementById("app").style.filter = "brightness(1)";
+});
+
+document.getElementById("playPause").addEventListener("mouseout", () => {
+    document.getElementById("app").style.opacity = 0.5;
+    document.getElementById("app").style.filter = "brightness(0.3)";
+});
+
+document.getElementById("timeSlider").addEventListener("mouseover", () => {
+    if (audioManager !== null) {
+        audioManager.updatingSlider = true;
+    }
+});
+
+document.getElementById("timeSlider").addEventListener("mouseout", () => {
+    if (audioManager !== null) {
+        audioManager.updatingSlider = false;
+    }
+});
+
+document.getElementById("timeSlider").addEventListener("change", () => {
+    if (audioManager !== null) {
+        audioManager.setTime(document.getElementById("timeSlider").value);
+    }
+});
+
+document.getElementById("particleCount").addEventListener("input", () => {
+    particleCount = document.getElementById("particleCount").value;
+    document.getElementById("particleCountDisplay").innerHTML = `<b>${formatNumber(document.getElementById("particleCount").value)}</b>`;
+});
+
+document.getElementById("particleCount").addEventListener("mouseover", () => {
+    document.getElementById("app").style.opacity = 1;
+    document.getElementById("app").style.filter = "brightness(1)";
+});
+
+document.getElementById("particleCount").addEventListener("mouseout", () => {
+    document.getElementById("app").style.opacity = 0.5;
+    document.getElementById("app").style.filter = "brightness(0.3)";
+});
+/* #endregion */
+
+
+/* #region MusicBrainz API */
+const mbApi = new MusicBrainzApi({
+    appName: "Three.js Music Visualizer",
+    appVersion: "0.1.0",
+    appContactInfo: "christopherbbody@gmail.com",
+});
+

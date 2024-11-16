@@ -1,47 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8">
-		<title>My first three.js app</title>
-		<link rel="stylesheet" href="style.css">
-		<script src="//s3.amazonaws.com/scripting.com/code/includes/jquery-1.9.1.min.js"></script>
-		<link href="//s3.amazonaws.com/scripting.com/code/includes/bootstrap.css" rel="stylesheet">
-		<script src="//s3.amazonaws.com/scripting.com/code/includes/bootstrap.min.js"></script>
-	</head>
-	<body>
-		<div id="app">
-			<div class="vBox">
-				<div id="sideBar" class="vBox" style="width:fit-content">
-					<button id="loadLocalButton" class="sideBarButton">
-						<img src="https://img.icons8.com/ios/50/000000/folder-invoices.png" />
-					</button>
-					<button id="loadLinkButton" class="sideBarButton" onclick="loadLinkButton">
-						<img src="https://img.icons8.com/ios/50/000000/link.png" />
-					</button>
-				</div>
-				<div id="songInfo">
-					<div class="hBox" style="width: 100%;">
-						<button id="playButton">
-							<img id="albumCover" class="albumCover" src="https://via.placeholder.com/150" alt="Album Cover" />
-						</button>
-						<div class="vBox" id="songDetails">
-							<p id="songTitle" class="songTitle">Song Title</p>
-							<div class="hBox">
-								<p id="songArtist" class="songInfo">Song Artist</p>
-								<p class="songInfo"> - </p>
-								<p id="songAlbum" class="songInfo">Song Album</p>
-							</div>
-							<input type="range" id="timeSlider" min="0" max="100" value="0" />
-							<div class="hBox" id="durationHBox">
-								<p id="currentTime" class="songInfo">0:00</p>
-								<p class="songInfo"> / </p>
-								<p id="songDuration" class="songInfo">0:00</p>
-							</div>
-						</div>
+    <head>
+        <meta charset="utf-8" />
+        <title>My first three.js app</title>
+        <link rel="stylesheet" href="style.css" />
+        <script src="//s3.amazonaws.com/scripting.com/code/includes/jquery-1.9.1.min.js"></script>
+        <link
+            href="//s3.amazonaws.com/scripting.com/code/includes/bootstrap.css"
+            rel="stylesheet"
+        />
+        <script src="//s3.amazonaws.com/scripting.com/code/includes/bootstrap.min.js"></script>
+    </head>
+    <body style="background-color: #242424;">
+        <div id="app">
+            <div class="vBox" style="justify-content: flex-end;">
+                <div id="sideBar" class="vBox" style="width: fit-content">
+                    <button id="loadLocalButton" class="sideBarButton">
+                        <img src="https://img.icons8.com/?size=50&id=FVQqbNWLzhcc&format=png&color=000000"/>
+                    </button>
+                </div>
+				<div id="sliderContainer">
+					<div class="hBox">
+						<p><b>Particle Count : </b></p>
+						<p id="particleCountDisplay"><b>300,000</b></p>
+						<input type="range" id="particleCount" min="300" max="1000000" value="300000" />
 					</div>
 				</div>
-			</div>
-		</div>
-		<script type="module" src="/main.js"></script>
-	</body>
+                <div id="songInfo">
+                    <div class="hBox" style="width: 100%">
+                        <button id="playButton">
+                            <img
+                                id="albumCover"
+                                class="albumCover"
+                                src="https://via.placeholder.com/150"
+                                alt="Album Cover"
+                            />
+                            <img
+                                id="playPause"
+                                class="playPause"
+                                src="https://img.icons8.com/?size=100&id=59862&format=png"
+                            />
+                        </button>
+                        <div class="vBox" id="songDetails">
+                            <p id="songTitle" class="songTitle">Song Title</p>
+                            <div class="hBox">
+                                <p id="songArtist" class="songInfo">
+                                    Song Artist
+                                </p>
+                                <p class="songInfo">-</p>
+                                <p id="songAlbum" class="songInfo">
+                                    Song Album
+                                </p>
+                            </div>
+                            <input
+                                type="range"
+                                id="timeSlider"
+                                min="0"
+                                max="100"
+                                value="0"
+                            />
+                            <div class="hBox" id="durationHBox">
+                                <p id="currentTime" class="songInfo">0:00</p>
+                                <p class="songInfo">/</p>
+                                <p id="songDuration" class="songInfo">0:00</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+		<!--
+        <p style="
+            margin: 0;
+            position: absolute;
+            left: 50%;
+            bottom: 100px;
+            transform: translateX(-50%);
+            font-family: Arial, sans-serif;
+            z-index: 1000;
+            color: white;
+            pointer-events: none;
+        ">
+            <span style="pointer-events: auto;">
+                Icons by <a
+                    href="https://icons8.com"
+                    style="color: #3498db; text-decoration: none;"
+                    target="_blank"
+                >Icons8</a>
+            </span>
+        </p>
+		-->
+        <script type="module" src="/main.js"></script>
+    </body>
 </html>
