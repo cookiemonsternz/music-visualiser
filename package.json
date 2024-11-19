@@ -1,13 +1,8 @@
 {
-  "devDependencies": {
-    "tailwindcss": "^3.4.14",
-    "vite": "^5.4.11"
-  },
   "dependencies": {
     "music-metadata": "^10.6.0",
     "musicbrainz-api": "^0.19.1",
-    "three": "^0.170.0",
-    "three-addons": "^1.2.0",
-    "web-audio-beat-detector": "^8.2.18"
+    "terser": "^5.36.0",
+    "three": "^0.170.0"
   }
 }

@@ -1,6 +1,6 @@
 import * as THREE from "three/webgpu";
 import AudioManager from "./static/managers/audiomanager.js";
-//import BPMManager from "./static/managers/bpmmanager.js";
+
 // Import TSL (Three Shader Language) utilities for GPU computations
 import {
     Fn,
@@ -14,15 +14,11 @@ import {
     If,
     pass,
 } from "three/tsl";
+
 import { bloom } from "three/addons/tsl/display/BloomNode.js"; 
 import { Stats } from "three/addons/libs/stats.module.js";
-import { OrbitControls } from "three/examples/jsm/Addons.js";
 import { parseBlob } from "music-metadata";
 import { MusicBrainzApi } from "musicbrainz-api";
-import { cover } from "three/src/extras/TextureUtils.js";
-//import { lensflare } from 'three/addons/tsl/display/LensflareNode.js';
-
-//import { GUI } from "three/addons/libs/lil-gui.module.min.js";
 
 let particleCount = 300000;
 // attractors buffer size + other stuff
@@ -40,7 +36,7 @@ const attractorRadius = uniform(1000.0);
 const attractorStrength = uniform(0.0);
 
 let camera, scene, renderer, postProcessing, pass1, pass2;
-let stats, controls;
+let stats;
 let computeParticles, updateAttractor;
 let psychoticMode = false;
 
@@ -48,7 +44,6 @@ let audioManager = null;
 
 let doingProcessEffect = false;
 async function init() {
-    //await document.body.requestFullscreen();
     await new Promise((resolve) => setTimeout(resolve, 1000));
     /* #region  Basic Scene */
     const { innerWidth, innerHeight } = window;
@@ -100,7 +95,6 @@ async function init() {
         const position = positionBuffer.element(instanceIndex);
         const color = colorBuffer.element(instanceIndex);
         const transparent = transparentBuffer.element(instanceIndex);
-        //const velocity = velocityBuffer.element(instanceIndex);
 
         const radius = hash(instanceIndex)
             .pow(1 / 3)
@@ -152,8 +146,6 @@ async function init() {
         position.addAssign(velocity.mul(timeScale));
 
         transparent.x = float(1).sub(position.length().div(55));
-
-        //transparent.x = position.sub(camera.position).length().div(30);
 
         color.assign(
             vec3(
@@ -208,15 +200,10 @@ async function init() {
         new THREE.PlaneGeometry(0.5, 0.5),
         particleMaterial
     );
-    //const particles = new THREE.Mesh(new THREE.SphereGeometry(0.5, 2, 2), particleMaterial);
     particles.count = particleCount;
     particles.frustumCulled = false;
     scene.add(particles);
     /* #endregion */
-
-    // visual helpers
-    //const helper = new THREE.GridHelper(60, 40, 0x303030, 0x303030);
-    //scene.add(helper);
 
     /* #region  Renderer */
     renderer = new THREE.WebGPURenderer({
@@ -239,21 +226,12 @@ async function init() {
     document.body.appendChild(stats.dom);
     /* #endregion */
 
-    /* #region  Controls */
-    controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 0, 0);
-    controls.update();
-    /* #endregion */
-
     renderer.computeAsync(computeInit);
     if (!psychoticMode) {
         const scenePass = pass(scene, camera);
         const bloomMult = -particleCount / 1000000 + 1.8;
         const processPass = bloom(scenePass, 2 * bloomMult, 0, 0.25);
-        //const process2Pass = scenePass.add( lensflare( scenePass ) );
         pass1 = scenePass.add(processPass);
-        // Str, Rad, Thr
-        //const processPass2 = bloom(scenePass, 3 * bloomMult, 0.5, 0.25);
 
         pass2 = scenePass.add(processPass);
 
@@ -263,7 +241,6 @@ async function init() {
         const scenePass = pass(scene, camera);
         const bloomMult = -particleCount / 1000000 + 1.8;
         const processPass = bloom(scenePass, 1 * bloomMult, 0.1, 0.25);
-        //const process2Pass = scenePass.add( lensflare( scenePass ) );
         pass1 = scenePass.add(processPass);
         // Str, Rad, Thr
         const processPass2 = bloom(scenePass, 500 * bloomMult, 5, 0.1);
@@ -302,14 +279,10 @@ async function animate() {
 
     if (audioManager !== null) {
         audioManager.update();
-        //console.log(audioManager.frequencyData);
-        // update strength
-        //console.log(audioManager.frequencyData.low);
         if (
             audioManager.frequencyData.low * 100 >
             audioManager.thresholds.highest
         ) {
-            //console.log("highest");
             attractorStrength.value = -Math.round(
                 audioManager.frequencyData.low * 150
             );
@@ -319,7 +292,6 @@ async function animate() {
             audioManager.frequencyData.low * 100 >
             audioManager.thresholds.high
         ) {
-            //console.log("high");
             attractorStrength.value = Math.round(
                 audioManager.frequencyData.low * 100
             );
@@ -328,7 +300,6 @@ async function animate() {
             audioManager.frequencyData.low * 100 >
             audioManager.thresholds.medium
         ) {
-            //console.log("medium");
             attractorStrength.value = Math.round(
                 audioManager.frequencyData.low * 40
             );
@@ -349,7 +320,6 @@ async function animate() {
         camera.updateProjectionMatrix();
     }
     // orbit camera
-    //console.log(audioManager.frequencyData.low);
     camera.position.x =
         Math.sin(
             performance.now() *
@@ -362,22 +332,6 @@ async function animate() {
         ) * 60;
     camera.lookAt(0, 0, 0);
 }
-
-/*
-document.body.addEventListener("keydown", async () => {
-    if (audioManager !== null) {
-        if (audioManager.isPlaying) {
-            audioManager.pause();
-        } else {
-            audioManager.play();
-        }
-    } else {
-        init();
-        
-        audioManager.play();
-    }
-});
-*/
 
 function cameraUp() {
     camera.fov = 60;
@@ -417,7 +371,6 @@ async function loadLocalFile() {
         document.getElementById("songAlbum").innerText = "Loading...";
         document.getElementById("albumCover").src = "./static/defaultAlbumCover.jpg";
         document.getElementById("songDuration").innerText = "Loading...";
-        //document.getElementById("sliderContainer").style.display = "none";
     }
     openDialogCommand(".mp3,.wav,.flac,.m4a,.aac,.ogg,.aiff,.alac,.wma,.opus");
 }
@@ -465,8 +418,7 @@ async function getCoverArt(metadata) {
         searchResults = await mbApi.search("recording", { query });
     }
 
-    // Filter search results for official version
-    //let coverResult = null;
+    // Filter search results for official versions
 
     // First pass: Filter recordings
     let filteredRecordings = [];
@@ -616,7 +568,7 @@ document.getElementById("particleCount").addEventListener("mouseout", () => {
 
 window.addEventListener("resize", () => {
     const { innerWidth, innerHeight } = window;
-    camera.aspect = innerWidth / innerHeight;
+    if (!renderer) return;
     camera.updateProjectionMatrix();
     renderer.setSize(innerWidth, innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
