@@ -15,7 +15,7 @@ import {
     pass,
 } from "three/tsl";
 
-import { bloom } from "three/addons/tsl/display/BloomNode.js"; 
+import { bloom } from "three/addons/tsl/display/BloomNode.js";
 //import { Stats } from "three/addons/libs/stats.module.js";
 import { parseBlob } from "music-metadata";
 //import { MusicBrainzApi } from "musicbrainz-api";
@@ -310,41 +310,58 @@ async function animate() {
             audioManager.thresholds.medium
         ) {
             attractorStrength.value = Math.round(
-                audioManager.frequencyData.low * 40  * strMultiplier
+                audioManager.frequencyData.low * 40 * strMultiplier
             );
             audioManager.onHit("medium");
         } else {
             attractorStrength.value = Math.round(
-                audioManager.frequencyData.low * 20  * strMultiplier
+                audioManager.frequencyData.low * 20 * strMultiplier
             );
         }
         attractorStrength.value += Math.round(
             audioManager.frequencyData.mid *
                 40 *
-                (255 / (audioManager.frequencyData.low, 1, 255).clamp(1, 255))
-                * strMultiplier
+                (255 / (audioManager.frequencyData.low, 1, 255).clamp(1, 255)) *
+                strMultiplier
         );
+        // orbit camera
+        camera.position.x =
+            Math.sin(
+                performance.now() *
+                    (
+                        (audioManager.getFrequencyBand(125, 500) - 0.5, 0.03) /
+                        100
+                    ).clamp(-1, 1)
+            ) * 60;
+        camera.position.z =
+            Math.cos(
+                performance.now() *
+                    (
+                        (audioManager.getFrequencyBand(125, 500) - 0.5, 0.03) /
+                        100
+                    ).clamp(-1, 1)
+            ) * 60;
+        camera.lookAt(0, 0, 0);
+    } else {
+        // orbit camera
+        camera.position.x =
+            Math.sin(
+                performance.now() * 0.0003
+            ) * 60;
+        camera.position.z =
+            Math.cos(
+                performance.now() * 0.0003
+            ) * 60;
+        camera.lookAt(0, 0, 0);
     }
     if (camera.fov < 70) {
-        if(!psychoticMode) {
+        if (!psychoticMode) {
             camera.fov += 0.5;
         } else {
             camera.fov += Math.random() * 2;
         }
         camera.updateProjectionMatrix();
     }
-    // orbit camera
-    camera.position.x =
-        Math.sin(
-            performance.now() *
-                ((audioManager.getFrequencyBand(125, 500) - 0.5, 0.03) / 100).clamp(-1, 1)
-        ) * 60;
-    camera.position.z =
-        Math.cos(
-            performance.now() *
-                ((audioManager.getFrequencyBand(125, 500) - 0.5, 0.03) / 100).clamp(-1, 1)
-        ) * 60;
-    camera.lookAt(0, 0, 0);
 }
 
 function cameraUp() {
@@ -387,7 +404,8 @@ async function loadLocalFile() {
         document.getElementById("songTitle").innerText = "Loading...";
         document.getElementById("songArtist").innerText = "Loading...";
         document.getElementById("songAlbum").innerText = "Loading...";
-        document.getElementById("albumCover").src = "./static/defaultAlbumCover.jpg";
+        document.getElementById("albumCover").src =
+            "./static/defaultAlbumCover.jpg";
         document.getElementById("songDuration").innerText = "Loading...";
     }
     openDialogCommand(".mp3,.wav,.flac,.m4a,.aac,.ogg,.aiff,.alac,.wma,.opus");
@@ -430,24 +448,32 @@ async function setSongDetails(file) {
 //init();
 
 async function getCoverArt(metadata) {
+    if (!metadata.common.album || !metadata.common.artist || !metadata.common.title) {
+        return null;
+    }
     // Get song from MusicBrainz
     let searchResults, coverResult;
     if (metadata.common.artist ? true : false) {
         //const query = `query="${metadata.common.title}" + artistname:${metadata.common.artist} + recording:${metadata.common.title} + release:${metadata.common.album}`;
         //searchResults = await mbApi.search("recording", { query });
-        searchResults = await fetch(constructQuery(metadata), { method: "GET", headers: { "User-Agent": "Three.js Music Visualizer/0.1.0 (Christopherbbody@gmail.com)" } }).then((response) => response.json());
+        searchResults = await fetch(constructQuery(metadata), {
+            method: "GET",
+            headers: {
+                "User-Agent":
+                    "Three.js Music Visualizer/0.1.0 (Christopherbbody@gmail.com)",
+            },
+        }).then((response) => response.json());
         //console.log(searchResults);
-    }  
+    }
 
     if (!searchResults || !searchResults.recordings) {
         return coverResult;
     }
-
     // Filter search results for official versions
-
     // First pass: Filter recordings
     let filteredRecordings = [];
     for (const recording of searchResults.recordings) {
+        if (!recording.releases) continue;
         if (recording.disambiguation) continue;
         if (
             recording["artist-credit"][0].name.toLowerCase() !==
@@ -522,7 +548,6 @@ String.prototype.toTitleCase = function () {
     });
 };
 
-
 /* #region  Event Listeners */
 document.getElementById("loadLocalButton").addEventListener("click", () => {
     loadLocalFile();
@@ -536,7 +561,7 @@ document.getElementById("loadLocalButton").addEventListener("mouseover", () => {
 document.getElementById("loadLocalButton").addEventListener("mouseout", () => {
     document.getElementById("app").style.opacity = 0.1;
     document.getElementById("app").style.filter = "brightness(0.3)";
-}  );
+});
 
 document.getElementById("playPause").addEventListener("click", () => {
     if (audioManager !== null) {
@@ -578,15 +603,19 @@ document.getElementById("timeSlider").addEventListener("change", () => {
 
 document.getElementById("particleCount").addEventListener("input", () => {
     particleCount = document.getElementById("particleCount").value;
-    document.getElementById("particleCountDisplay").innerHTML = `<b>${formatNumber(document.getElementById("particleCount").value)}</b>`;
+    document.getElementById(
+        "particleCountDisplay"
+    ).innerHTML = `<b>${formatNumber(
+        document.getElementById("particleCount").value
+    )}</b>`;
 });
 
-document.getElementById("particleCount").addEventListener("mouseover", () => {
+document.getElementById("sliderContainer").addEventListener("mouseover", () => {
     document.getElementById("app").style.opacity = 1;
     document.getElementById("app").style.filter = "brightness(1)";
 });
 
-document.getElementById("particleCount").addEventListener("mouseout", () => {
+document.getElementById("sliderContainer").addEventListener("mouseout", () => {
     document.getElementById("app").style.opacity = 0.1;
     document.getElementById("app").style.filter = "brightness(0.3)";
 });
@@ -599,10 +628,12 @@ document.getElementById("fullscreenButton").addEventListener("click", () => {
     }
 });
 
-document.getElementById("fullscreenButton").addEventListener("mouseover", () => {
-    document.getElementById("app").style.opacity = 1;
-    document.getElementById("app").style.filter = "brightness(1)";
-});
+document
+    .getElementById("fullscreenButton")
+    .addEventListener("mouseover", () => {
+        document.getElementById("app").style.opacity = 1;
+        document.getElementById("app").style.filter = "brightness(1)";
+    });
 
 document.getElementById("fullscreenButton").addEventListener("mouseout", () => {
     document.getElementById("app").style.opacity = 0.1;
@@ -611,29 +642,54 @@ document.getElementById("fullscreenButton").addEventListener("mouseout", () => {
 
 document.getElementById("psychoticModeSwitch").addEventListener("click", () => {
     psychoticMode = !psychoticMode;
+    if (!psychoticMode) {
+        const scenePass = pass(scene, camera);
+        const bloomMult = -particleCount / 1000000 + 1.8;
+        const processPass = bloom(scenePass, 1 * bloomMult, 0, 0.25);
+        pass1 = scenePass.add(processPass);
+
+        pass2 = scenePass.add(processPass);
+
+        postProcessing = new THREE.PostProcessing(renderer);
+        postProcessing.outputNode = pass1;
+    } else {
+        const scenePass = pass(scene, camera);
+        const bloomMult = -particleCount / 1000000 + 1.8;
+        const processPass = bloom(scenePass, 0.8 * bloomMult, 0.1, 0.25);
+        pass1 = scenePass.add(processPass);
+        // Str, Rad, Thr
+        const processPass2 = bloom(scenePass, 500 * bloomMult, 5, 0.1);
+
+        pass2 = scenePass.add(processPass2);
+
+        postProcessing = new THREE.PostProcessing(renderer);
+        postProcessing.outputNode = pass1;
+    }
 });
 
-document.getElementById("psychoticModeContainer").addEventListener("mouseover", () => {
-    document.getElementById("app").style.opacity = 1;
-    document.getElementById("app").style.filter = "brightness(1)";
-});
+document
+    .getElementById("psychoticModeContainer")
+    .addEventListener("mouseover", () => {
+        document.getElementById("app").style.opacity = 1;
+        document.getElementById("app").style.filter = "brightness(1)";
+    });
 
-document.getElementById("psychoticModeContainer").addEventListener("mouseout", () => {
-    document.getElementById("app").style.opacity = 0.1;
-    document.getElementById("app").style.filter = "brightness(0.3)";
-});
-
-
+document
+    .getElementById("psychoticModeContainer")
+    .addEventListener("mouseout", () => {
+        document.getElementById("app").style.opacity = 0.1;
+        document.getElementById("app").style.filter = "brightness(0.3)";
+    });
 
 window.addEventListener("resize", () => {
     const { innerWidth, innerHeight } = window;
     if (!renderer) return;
+    camera.aspect = innerWidth / innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(innerWidth, innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
 });
 /* #endregion */
-
 
 /* #region MusicBrainz API */
 /*
