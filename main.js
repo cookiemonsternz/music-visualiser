@@ -362,6 +362,7 @@ async function animate() {
         }
         camera.updateProjectionMatrix();
     }
+    
 }
 
 function cameraUp() {
@@ -718,3 +719,19 @@ const constructQuery = (metadata) => {
     query += "&fmt=json";
     return query;
 };
+
+
+if (audioManager !== null) {
+    audioManager.loadAudio("./static/songDemo/07 - Linkin Park - By Myself.mp3");
+    setSongDetails("./static/songDemo/07 - Linkin Park - By Myself.mp3");
+    init();
+} else {
+    audioManager = new AudioManager();
+    audioManager.loadAudio("./static/songDemo/07 - Linkin Park - By Myself.mp3");
+    document.getElementById("songTitle").innerText = "By Myself";
+    document.getElementById("songArtist").innerText = "Linkin Park";
+    document.getElementById("songAlbum").innerText = "Hybrid Theory";
+    document.getElementById("albumCover").src = "https://ia801909.us.archive.org/1/items/mbid-95e96595-d34d-440e-be29-2c3c02895f0b/mbid-95e96595-d34d-440e-be29-2c3c02895f0b-27469140357_thumb250.jpg";
+    document.getElementById("songDuration").innerText = "3:09";
+    init()
+}
