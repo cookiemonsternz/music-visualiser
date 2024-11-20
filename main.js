@@ -16,9 +16,9 @@ import {
 } from "three/tsl";
 
 import { bloom } from "three/addons/tsl/display/BloomNode.js"; 
-import { Stats } from "three/addons/libs/stats.module.js";
+//import { Stats } from "three/addons/libs/stats.module.js";
 import { parseBlob } from "music-metadata";
-import { MusicBrainzApi } from "musicbrainz-api";
+//import { MusicBrainzApi } from "musicbrainz-api";
 
 let particleCount = 300000;
 // attractors buffer size + other stuff
@@ -222,15 +222,15 @@ async function init() {
     /* #endregion */
 
     /* #region  FPS Counter */
-    stats = new Stats();
-    document.body.appendChild(stats.dom);
+    //stats = new Stats();
+    //document.body.appendChild(stats.dom);
     /* #endregion */
 
     renderer.computeAsync(computeInit);
     if (!psychoticMode) {
         const scenePass = pass(scene, camera);
         const bloomMult = -particleCount / 1000000 + 1.8;
-        const processPass = bloom(scenePass, 2 * bloomMult, 0, 0.25);
+        const processPass = bloom(scenePass, 1 * bloomMult, 0, 0.25);
         pass1 = scenePass.add(processPass);
 
         pass2 = scenePass.add(processPass);
@@ -240,7 +240,7 @@ async function init() {
     } else {
         const scenePass = pass(scene, camera);
         const bloomMult = -particleCount / 1000000 + 1.8;
-        const processPass = bloom(scenePass, 1 * bloomMult, 0.1, 0.25);
+        const processPass = bloom(scenePass, 0.8 * bloomMult, 0.1, 0.25);
         pass1 = scenePass.add(processPass);
         // Str, Rad, Thr
         const processPass2 = bloom(scenePass, 500 * bloomMult, 5, 0.1);
@@ -257,7 +257,11 @@ async function onHit() {
     doingProcessEffect = true;
     postProcessing = new THREE.PostProcessing(renderer);
     postProcessing.outputNode = pass2;
-    timeScale.value = 0.85;
+    if (psychoticMode) {
+        timeScale.value = 0.1;
+    } else {
+        timeScale.value = 0.85;
+    }
     await new Promise((resolve) => setTimeout(resolve, 800));
     timeScale.value = 1.0;
     postProcessing = new THREE.PostProcessing(renderer);
@@ -266,7 +270,7 @@ async function onHit() {
 }
 
 async function animate() {
-    stats.update();
+    //stats.update();
 
     // update attractor
     await renderer.computeAsync(updateAttractor);
@@ -276,6 +280,11 @@ async function animate() {
 
     // render
     await postProcessing.renderAsync();
+
+    let strMultiplier = 1;
+    if (psychoticMode) {
+        strMultiplier = Math.sin(performance.now() / 1000) * 0.5 + 1;
+    }
 
     if (audioManager !== null) {
         audioManager.update();
@@ -301,22 +310,27 @@ async function animate() {
             audioManager.thresholds.medium
         ) {
             attractorStrength.value = Math.round(
-                audioManager.frequencyData.low * 40
+                audioManager.frequencyData.low * 40  * strMultiplier
             );
             audioManager.onHit("medium");
         } else {
             attractorStrength.value = Math.round(
-                audioManager.frequencyData.low * 20
+                audioManager.frequencyData.low * 20  * strMultiplier
             );
         }
         attractorStrength.value += Math.round(
             audioManager.frequencyData.mid *
                 40 *
                 (255 / (audioManager.frequencyData.low, 1, 255).clamp(1, 255))
+                * strMultiplier
         );
     }
     if (camera.fov < 70) {
-        camera.fov += 0.5;
+        if(!psychoticMode) {
+            camera.fov += 0.5;
+        } else {
+            camera.fov += Math.random() * 2;
+        }
         camera.updateProjectionMatrix();
     }
     // orbit camera
@@ -334,7 +348,11 @@ async function animate() {
 }
 
 function cameraUp() {
-    camera.fov = 60;
+    if (!psychoticMode) {
+        camera.fov = 60;
+    } else {
+        camera.fov = 10;
+    }
     camera.updateProjectionMatrix();
     onHit();
 }
@@ -385,6 +403,7 @@ async function setSongDetails(file) {
     /* #region  Music Cover Art */
     let coverResult = await getCoverArt(metadata);
     console.log(coverResult);
+    //let coverResult = null;
     /* #endregion */
 
     document.getElementById("songTitle").innerText = metadata.common.title
@@ -414,8 +433,14 @@ async function getCoverArt(metadata) {
     // Get song from MusicBrainz
     let searchResults, coverResult;
     if (metadata.common.artist ? true : false) {
-        const query = `query="${metadata.common.title}" + artistname:${metadata.common.artist} + recording:${metadata.common.title} + release:${metadata.common.album}`;
-        searchResults = await mbApi.search("recording", { query });
+        //const query = `query="${metadata.common.title}" + artistname:${metadata.common.artist} + recording:${metadata.common.title} + release:${metadata.common.album}`;
+        //searchResults = await mbApi.search("recording", { query });
+        searchResults = await fetch(constructQuery(metadata), { method: "GET", headers: { "User-Agent": "Three.js Music Visualizer/0.1.0 (Christopherbbody@gmail.com)" } }).then((response) => response.json());
+        //console.log(searchResults);
+    }  
+
+    if (!searchResults || !searchResults.recordings) {
+        return coverResult;
     }
 
     // Filter search results for official versions
@@ -509,7 +534,7 @@ document.getElementById("loadLocalButton").addEventListener("mouseover", () => {
 });
 
 document.getElementById("loadLocalButton").addEventListener("mouseout", () => {
-    document.getElementById("app").style.opacity = 0.5;
+    document.getElementById("app").style.opacity = 0.1;
     document.getElementById("app").style.filter = "brightness(0.3)";
 }  );
 
@@ -523,13 +548,13 @@ document.getElementById("playPause").addEventListener("click", () => {
     }
 });
 
-document.getElementById("playPause").addEventListener("mouseover", () => {
+document.getElementById("songInfo").addEventListener("mouseover", () => {
     document.getElementById("app").style.opacity = 1;
     document.getElementById("app").style.filter = "brightness(1)";
 });
 
-document.getElementById("playPause").addEventListener("mouseout", () => {
-    document.getElementById("app").style.opacity = 0.5;
+document.getElementById("songInfo").addEventListener("mouseout", () => {
+    document.getElementById("app").style.opacity = 0.1;
     document.getElementById("app").style.filter = "brightness(0.3)";
 });
 
@@ -562,9 +587,43 @@ document.getElementById("particleCount").addEventListener("mouseover", () => {
 });
 
 document.getElementById("particleCount").addEventListener("mouseout", () => {
-    document.getElementById("app").style.opacity = 0.5;
+    document.getElementById("app").style.opacity = 0.1;
     document.getElementById("app").style.filter = "brightness(0.3)";
 });
+
+document.getElementById("fullscreenButton").addEventListener("click", () => {
+    if (document.fullscreenElement) {
+        document.exitFullscreen();
+    } else {
+        document.documentElement.requestFullscreen();
+    }
+});
+
+document.getElementById("fullscreenButton").addEventListener("mouseover", () => {
+    document.getElementById("app").style.opacity = 1;
+    document.getElementById("app").style.filter = "brightness(1)";
+});
+
+document.getElementById("fullscreenButton").addEventListener("mouseout", () => {
+    document.getElementById("app").style.opacity = 0.1;
+    document.getElementById("app").style.filter = "brightness(0.3)";
+});
+
+document.getElementById("psychoticModeSwitch").addEventListener("click", () => {
+    psychoticMode = !psychoticMode;
+});
+
+document.getElementById("psychoticModeContainer").addEventListener("mouseover", () => {
+    document.getElementById("app").style.opacity = 1;
+    document.getElementById("app").style.filter = "brightness(1)";
+});
+
+document.getElementById("psychoticModeContainer").addEventListener("mouseout", () => {
+    document.getElementById("app").style.opacity = 0.1;
+    document.getElementById("app").style.filter = "brightness(0.3)";
+});
+
+
 
 window.addEventListener("resize", () => {
     const { innerWidth, innerHeight } = window;
@@ -577,9 +636,26 @@ window.addEventListener("resize", () => {
 
 
 /* #region MusicBrainz API */
+/*
 const mbApi = new MusicBrainzApi({
     appName: "Three.js Music Visualizer",
     appVersion: "0.1.0",
     appContactInfo: "christopherbbody@gmail.com",
 });
+*/
 
+const constructQuery = (metadata) => {
+    //https://musicbrainz.org/ws/2/recording?query=%22we%20will%20rock%20you%22%20AND%20arid:0383dadf-2a4e-4d10-a46a-e9e041da8eb3
+    let query = "https://musicbrainz.org/ws/2/recording?";
+    if (metadata.common.title) {
+        query += `query="${metadata.common.title}"`;
+    }
+    if (metadata.common.artist) {
+        query += ` + artistname:${metadata.common.artist}`;
+    }
+    if (metadata.common.album) {
+        query += ` + release:${metadata.common.album}`;
+    }
+    query += "&fmt=json";
+    return query;
+};

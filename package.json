@@ -1,8 +1,0 @@
-{
-  "dependencies": {
-    "music-metadata": "^10.6.0",
-    "musicbrainz-api": "^0.19.1",
-    "terser": "^5.36.0",
-    "three": "^0.170.0"
-  }
-}
