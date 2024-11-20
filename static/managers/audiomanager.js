@@ -189,6 +189,7 @@ export default class AudioManager {
     }
 
     update() {
+        if (!this.audio) return;
         if (!this.isPlaying) return;
         this.collectFrequencyData();
         this.analyseFrequencyData();

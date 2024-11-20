@@ -287,71 +287,71 @@ async function animate() {
     }
 
     if (audioManager !== null) {
-        audioManager.update();
-        if (
-            audioManager.frequencyData.low * 100 >
-            audioManager.thresholds.highest
-        ) {
-            attractorStrength.value = -Math.round(
-                audioManager.frequencyData.low * 150
+        if (!audioManager.audio) {
+            audioManager.update();
+            if (
+                audioManager.frequencyData.low * 100 >
+                audioManager.thresholds.highest
+            ) {
+                attractorStrength.value = -Math.round(
+                    audioManager.frequencyData.low * 150
+                );
+                cameraUp();
+                audioManager.onHit("highest");
+            } else if (
+                audioManager.frequencyData.low * 100 >
+                audioManager.thresholds.high
+            ) {
+                attractorStrength.value = Math.round(
+                    audioManager.frequencyData.low * 100
+                );
+                audioManager.onHit("high");
+            } else if (
+                audioManager.frequencyData.low * 100 >
+                audioManager.thresholds.medium
+            ) {
+                attractorStrength.value = Math.round(
+                    audioManager.frequencyData.low * 40 * strMultiplier
+                );
+                audioManager.onHit("medium");
+            } else {
+                attractorStrength.value = Math.round(
+                    audioManager.frequencyData.low * 20 * strMultiplier
+                );
+            }
+            attractorStrength.value += Math.round(
+                audioManager.frequencyData.mid *
+                    40 *
+                    (255 /
+                        (audioManager.frequencyData.low, 1, 255).clamp(
+                            1,
+                            255
+                        )) *
+                    strMultiplier
             );
-            cameraUp();
-            audioManager.onHit("highest");
-        } else if (
-            audioManager.frequencyData.low * 100 >
-            audioManager.thresholds.high
-        ) {
-            attractorStrength.value = Math.round(
-                audioManager.frequencyData.low * 100
-            );
-            audioManager.onHit("high");
-        } else if (
-            audioManager.frequencyData.low * 100 >
-            audioManager.thresholds.medium
-        ) {
-            attractorStrength.value = Math.round(
-                audioManager.frequencyData.low * 40 * strMultiplier
-            );
-            audioManager.onHit("medium");
-        } else {
-            attractorStrength.value = Math.round(
-                audioManager.frequencyData.low * 20 * strMultiplier
-            );
+            // orbit camera
+            camera.position.x =
+                Math.sin(
+                    performance.now() *
+                        (
+                            (audioManager.getFrequencyBand(125, 500) - 0.5,
+                            0.03) / 100
+                        ).clamp(-1, 1)
+                ) * 60;
+            camera.position.z =
+                Math.cos(
+                    performance.now() *
+                        (
+                            (audioManager.getFrequencyBand(125, 500) - 0.5,
+                            0.03) / 100
+                        ).clamp(-1, 1)
+                ) * 60;
+            camera.lookAt(0, 0, 0);
         }
-        attractorStrength.value += Math.round(
-            audioManager.frequencyData.mid *
-                40 *
-                (255 / (audioManager.frequencyData.low, 1, 255).clamp(1, 255)) *
-                strMultiplier
-        );
-        // orbit camera
-        camera.position.x =
-            Math.sin(
-                performance.now() *
-                    (
-                        (audioManager.getFrequencyBand(125, 500) - 0.5, 0.03) /
-                        100
-                    ).clamp(-1, 1)
-            ) * 60;
-        camera.position.z =
-            Math.cos(
-                performance.now() *
-                    (
-                        (audioManager.getFrequencyBand(125, 500) - 0.5, 0.03) /
-                        100
-                    ).clamp(-1, 1)
-            ) * 60;
-        camera.lookAt(0, 0, 0);
     } else {
         // orbit camera
-        camera.position.x =
-            Math.sin(
-                performance.now() * 0.0003
-            ) * 60;
-        camera.position.z =
-            Math.cos(
-                performance.now() * 0.0003
-            ) * 60;
+        camera.position.x = Math.sin(performance.now() * 0.0003) * 60;
+        camera.position.z = Math.cos(performance.now() * 0.0003) * 60;
         camera.lookAt(0, 0, 0);
     }
     if (camera.fov < 70) {
@@ -448,7 +448,11 @@ async function setSongDetails(file) {
 //init();
 
 async function getCoverArt(metadata) {
-    if (!metadata.common.album || !metadata.common.artist || !metadata.common.title) {
+    if (
+        !metadata.common.album ||
+        !metadata.common.artist ||
+        !metadata.common.title
+    ) {
         return null;
     }
     // Get song from MusicBrainz
