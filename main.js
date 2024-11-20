@@ -41,7 +41,7 @@ let computeParticles, updateAttractor;
 let psychoticMode = false;
 
 let audioManager = null;
-
+let songLoaded = false;
 let doingProcessEffect = false;
 async function init() {
     await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -399,6 +399,7 @@ async function openDialogCommand(fileTypes) {
 }
 
 async function loadLocalFile() {
+    songLoaded = true;
     if (audioManager !== null) {
         audioManager.pause();
     }
@@ -574,6 +575,15 @@ document.getElementById("playPause").addEventListener("click", () => {
         } else {
             audioManager.play();
         }
+    } else {
+        // if no song has been loaded, load the default
+        if (!songLoaded) {
+            audioManager = new AudioManager();
+            audioManager.loadAudio("./static/songDemo/07 - Linkin Park - By Myself.mp3");
+            init().then(() => {
+                audioManager.play();
+            });
+        }
     }
 });
 
@@ -721,17 +731,8 @@ const constructQuery = (metadata) => {
 };
 
 
-if (audioManager !== null) {
-    audioManager.loadAudio("./static/songDemo/07 - Linkin Park - By Myself.mp3");
-    setSongDetails("./static/songDemo/07 - Linkin Park - By Myself.mp3");
-    init();
-} else {
-    audioManager = new AudioManager();
-    audioManager.loadAudio("./static/songDemo/07 - Linkin Park - By Myself.mp3");
-    document.getElementById("songTitle").innerText = "By Myself";
-    document.getElementById("songArtist").innerText = "Linkin Park";
-    document.getElementById("songAlbum").innerText = "Hybrid Theory";
-    document.getElementById("albumCover").src = "https://ia801909.us.archive.org/1/items/mbid-95e96595-d34d-440e-be29-2c3c02895f0b/mbid-95e96595-d34d-440e-be29-2c3c02895f0b-27469140357_thumb250.jpg";
-    document.getElementById("songDuration").innerText = "3:09";
-    init()
-}
+document.getElementById("songTitle").innerText = "By Myself";
+document.getElementById("songArtist").innerText = "Linkin Park";
+document.getElementById("songAlbum").innerText = "Hybrid Theory";
+document.getElementById("albumCover").src = "https://ia801909.us.archive.org/1/items/mbid-95e96595-d34d-440e-be29-2c3c02895f0b/mbid-95e96595-d34d-440e-be29-2c3c02895f0b-27469140357_thumb250.jpg";
+document.getElementById("songDuration").innerText = "3:09";
