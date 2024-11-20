@@ -287,7 +287,7 @@ async function animate() {
     }
 
     if (audioManager !== null) {
-        if (!audioManager.audio) {
+        if (audioManager.audio !== null && audioManager.audioContext !== null) {
             audioManager.update();
             if (
                 audioManager.frequencyData.low * 100 >
@@ -400,14 +400,13 @@ async function openDialogCommand(fileTypes) {
 async function loadLocalFile() {
     if (audioManager !== null) {
         audioManager.pause();
-    } else {
-        document.getElementById("songTitle").innerText = "Loading...";
-        document.getElementById("songArtist").innerText = "Loading...";
-        document.getElementById("songAlbum").innerText = "Loading...";
-        document.getElementById("albumCover").src =
-            "./static/defaultAlbumCover.jpg";
-        document.getElementById("songDuration").innerText = "Loading...";
     }
+    document.getElementById("songTitle").innerText = "Loading...";
+    document.getElementById("songArtist").innerText = "Loading...";
+    document.getElementById("songAlbum").innerText = "Loading...";
+    document.getElementById("albumCover").src =
+        "./static/defaultAlbumCover.jpg";
+    document.getElementById("songDuration").innerText = "Loading...";
     openDialogCommand(".mp3,.wav,.flac,.m4a,.aac,.ogg,.aiff,.alac,.wma,.opus");
 }
 
