@@ -1,6 +1,6 @@
 import * as THREE from "three/webgpu";
 import AudioManager from "./static/managers/audiomanager.js";
-//import BPMManager from "./static/managers/bpmmanager.js";
+
 // Import TSL (Three Shader Language) utilities for GPU computations
 import {
     Fn,
@@ -14,15 +14,11 @@ import {
     If,
     pass,
 } from "three/tsl";
-import { bloom } from "three/addons/tsl/display/BloomNode.js"; 
-import { Stats } from "three/addons/libs/stats.module.js";
-import { OrbitControls } from "three/examples/jsm/Addons.js";
-import { parseBlob } from "music-metadata";
-import { MusicBrainzApi } from "musicbrainz-api";
-import { cover } from "three/src/extras/TextureUtils.js";
-//import { lensflare } from 'three/addons/tsl/display/LensflareNode.js';
 
-//import { GUI } from "three/addons/libs/lil-gui.module.min.js";
+import { bloom } from "three/addons/tsl/display/BloomNode.js"; 
+//import { Stats } from "three/addons/libs/stats.module.js";
+import { parseBlob } from "music-metadata";
+//import { MusicBrainzApi } from "musicbrainz-api";
 
 let particleCount = 300000;
 // attractors buffer size + other stuff
@@ -40,7 +36,7 @@ const attractorRadius = uniform(1000.0);
 const attractorStrength = uniform(0.0);
 
 let camera, scene, renderer, postProcessing, pass1, pass2;
-let stats, controls;
+let stats;
 let computeParticles, updateAttractor;
 let psychoticMode = false;
 
@@ -48,7 +44,6 @@ let audioManager = null;
 
 let doingProcessEffect = false;
 async function init() {
-    //await document.body.requestFullscreen();
     await new Promise((resolve) => setTimeout(resolve, 1000));
     /* #region  Basic Scene */
     const { innerWidth, innerHeight } = window;
@@ -100,7 +95,6 @@ async function init() {
         const position = positionBuffer.element(instanceIndex);
         const color = colorBuffer.element(instanceIndex);
         const transparent = transparentBuffer.element(instanceIndex);
-        //const velocity = velocityBuffer.element(instanceIndex);
 
         const radius = hash(instanceIndex)
             .pow(1 / 3)
@@ -152,8 +146,6 @@ async function init() {
         position.addAssign(velocity.mul(timeScale));
 
         transparent.x = float(1).sub(position.length().div(55));
-
-        //transparent.x = position.sub(camera.position).length().div(30);
 
         color.assign(
             vec3(
@@ -208,15 +200,10 @@ async function init() {
         new THREE.PlaneGeometry(0.5, 0.5),
         particleMaterial
     );
-    //const particles = new THREE.Mesh(new THREE.SphereGeometry(0.5, 2, 2), particleMaterial);
     particles.count = particleCount;
     particles.frustumCulled = false;
     scene.add(particles);
     /* #endregion */
-
-    // visual helpers
-    //const helper = new THREE.GridHelper(60, 40, 0x303030, 0x303030);
-    //scene.add(helper);
 
     /* #region  Renderer */
     renderer = new THREE.WebGPURenderer({
@@ -235,25 +222,16 @@ async function init() {
     /* #endregion */
 
     /* #region  FPS Counter */
-    stats = new Stats();
-    document.body.appendChild(stats.dom);
-    /* #endregion */
-
-    /* #region  Controls */
-    controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 0, 0);
-    controls.update();
+    //stats = new Stats();
+    //document.body.appendChild(stats.dom);
     /* #endregion */
 
     renderer.computeAsync(computeInit);
     if (!psychoticMode) {
         const scenePass = pass(scene, camera);
         const bloomMult = -particleCount / 1000000 + 1.8;
-        const processPass = bloom(scenePass, 2 * bloomMult, 0, 0.25);
-        //const process2Pass = scenePass.add( lensflare( scenePass ) );
+        const processPass = bloom(scenePass, 1 * bloomMult, 0, 0.25);
         pass1 = scenePass.add(processPass);
-        // Str, Rad, Thr
-        //const processPass2 = bloom(scenePass, 3 * bloomMult, 0.5, 0.25);
 
         pass2 = scenePass.add(processPass);
 
@@ -262,8 +240,7 @@ async function init() {
     } else {
         const scenePass = pass(scene, camera);
         const bloomMult = -particleCount / 1000000 + 1.8;
-        const processPass = bloom(scenePass, 1 * bloomMult, 0.1, 0.25);
-        //const process2Pass = scenePass.add( lensflare( scenePass ) );
+        const processPass = bloom(scenePass, 0.8 * bloomMult, 0.1, 0.25);
         pass1 = scenePass.add(processPass);
         // Str, Rad, Thr
         const processPass2 = bloom(scenePass, 500 * bloomMult, 5, 0.1);
@@ -280,7 +257,11 @@ async function onHit() {
     doingProcessEffect = true;
     postProcessing = new THREE.PostProcessing(renderer);
     postProcessing.outputNode = pass2;
-    timeScale.value = 0.85;
+    if (psychoticMode) {
+        timeScale.value = 0.1;
+    } else {
+        timeScale.value = 0.85;
+    }
     await new Promise((resolve) => setTimeout(resolve, 800));
     timeScale.value = 1.0;
     postProcessing = new THREE.PostProcessing(renderer);
@@ -289,7 +270,7 @@ async function onHit() {
 }
 
 async function animate() {
-    stats.update();
+    //stats.update();
 
     // update attractor
     await renderer.computeAsync(updateAttractor);
@@ -300,16 +281,17 @@ async function animate() {
     // render
     await postProcessing.renderAsync();
 
+    let strMultiplier = 1;
+    if (psychoticMode) {
+        strMultiplier = Math.sin(performance.now() / 1000) * 0.5 + 1;
+    }
+
     if (audioManager !== null) {
         audioManager.update();
-        //console.log(audioManager.frequencyData);
-        // update strength
-        //console.log(audioManager.frequencyData.low);
         if (
             audioManager.frequencyData.low * 100 >
             audioManager.thresholds.highest
         ) {
-            //console.log("highest");
             attractorStrength.value = -Math.round(
                 audioManager.frequencyData.low * 150
             );
@@ -319,7 +301,6 @@ async function animate() {
             audioManager.frequencyData.low * 100 >
             audioManager.thresholds.high
         ) {
-            //console.log("high");
             attractorStrength.value = Math.round(
                 audioManager.frequencyData.low * 100
             );
@@ -328,28 +309,31 @@ async function animate() {
             audioManager.frequencyData.low * 100 >
             audioManager.thresholds.medium
         ) {
-            //console.log("medium");
             attractorStrength.value = Math.round(
-                audioManager.frequencyData.low * 40
+                audioManager.frequencyData.low * 40  * strMultiplier
             );
             audioManager.onHit("medium");
         } else {
             attractorStrength.value = Math.round(
-                audioManager.frequencyData.low * 20
+                audioManager.frequencyData.low * 20  * strMultiplier
             );
         }
         attractorStrength.value += Math.round(
             audioManager.frequencyData.mid *
                 40 *
                 (255 / (audioManager.frequencyData.low, 1, 255).clamp(1, 255))
+                * strMultiplier
         );
     }
     if (camera.fov < 70) {
-        camera.fov += 0.5;
+        if(!psychoticMode) {
+            camera.fov += 0.5;
+        } else {
+            camera.fov += Math.random() * 2;
+        }
         camera.updateProjectionMatrix();
     }
     // orbit camera
-    //console.log(audioManager.frequencyData.low);
     camera.position.x =
         Math.sin(
             performance.now() *
@@ -363,24 +347,12 @@ async function animate() {
     camera.lookAt(0, 0, 0);
 }
 
-/*
-document.body.addEventListener("keydown", async () => {
-    if (audioManager !== null) {
-        if (audioManager.isPlaying) {
-            audioManager.pause();
-        } else {
-            audioManager.play();
-        }
-    } else {
-        init();
-        
-        audioManager.play();
-    }
-});
-*/
-
 function cameraUp() {
-    camera.fov = 60;
+    if (!psychoticMode) {
+        camera.fov = 60;
+    } else {
+        camera.fov = 10;
+    }
     camera.updateProjectionMatrix();
     onHit();
 }
@@ -417,7 +389,6 @@ async function loadLocalFile() {
         document.getElementById("songAlbum").innerText = "Loading...";
         document.getElementById("albumCover").src = "./static/defaultAlbumCover.jpg";
         document.getElementById("songDuration").innerText = "Loading...";
-        //document.getElementById("sliderContainer").style.display = "none";
     }
     openDialogCommand(".mp3,.wav,.flac,.m4a,.aac,.ogg,.aiff,.alac,.wma,.opus");
 }
@@ -432,6 +403,7 @@ async function setSongDetails(file) {
     /* #region  Music Cover Art */
     let coverResult = await getCoverArt(metadata);
     console.log(coverResult);
+    //let coverResult = null;
     /* #endregion */
 
     document.getElementById("songTitle").innerText = metadata.common.title
@@ -461,12 +433,17 @@ async function getCoverArt(metadata) {
     // Get song from MusicBrainz
     let searchResults, coverResult;
     if (metadata.common.artist ? true : false) {
-        const query = `query="${metadata.common.title}" + artistname:${metadata.common.artist} + recording:${metadata.common.title} + release:${metadata.common.album}`;
-        searchResults = await mbApi.search("recording", { query });
+        //const query = `query="${metadata.common.title}" + artistname:${metadata.common.artist} + recording:${metadata.common.title} + release:${metadata.common.album}`;
+        //searchResults = await mbApi.search("recording", { query });
+        searchResults = await fetch(constructQuery(metadata), { method: "GET", headers: { "User-Agent": "Three.js Music Visualizer/0.1.0 (Christopherbbody@gmail.com)" } }).then((response) => response.json());
+        //console.log(searchResults);
+    }  
+
+    if (!searchResults || !searchResults.recordings) {
+        return coverResult;
     }
 
-    // Filter search results for official version
-    //let coverResult = null;
+    // Filter search results for official versions
 
     // First pass: Filter recordings
     let filteredRecordings = [];
@@ -557,7 +534,7 @@ document.getElementById("loadLocalButton").addEventListener("mouseover", () => {
 });
 
 document.getElementById("loadLocalButton").addEventListener("mouseout", () => {
-    document.getElementById("app").style.opacity = 0.5;
+    document.getElementById("app").style.opacity = 0.1;
     document.getElementById("app").style.filter = "brightness(0.3)";
 }  );
 
@@ -571,13 +548,13 @@ document.getElementById("playPause").addEventListener("click", () => {
     }
 });
 
-document.getElementById("playPause").addEventListener("mouseover", () => {
+document.getElementById("songInfo").addEventListener("mouseover", () => {
     document.getElementById("app").style.opacity = 1;
     document.getElementById("app").style.filter = "brightness(1)";
 });
 
-document.getElementById("playPause").addEventListener("mouseout", () => {
-    document.getElementById("app").style.opacity = 0.5;
+document.getElementById("songInfo").addEventListener("mouseout", () => {
+    document.getElementById("app").style.opacity = 0.1;
     document.getElementById("app").style.filter = "brightness(0.3)";
 });
 
@@ -610,13 +587,47 @@ document.getElementById("particleCount").addEventListener("mouseover", () => {
 });
 
 document.getElementById("particleCount").addEventListener("mouseout", () => {
-    document.getElementById("app").style.opacity = 0.5;
+    document.getElementById("app").style.opacity = 0.1;
     document.getElementById("app").style.filter = "brightness(0.3)";
 });
 
+document.getElementById("fullscreenButton").addEventListener("click", () => {
+    if (document.fullscreenElement) {
+        document.exitFullscreen();
+    } else {
+        document.documentElement.requestFullscreen();
+    }
+});
+
+document.getElementById("fullscreenButton").addEventListener("mouseover", () => {
+    document.getElementById("app").style.opacity = 1;
+    document.getElementById("app").style.filter = "brightness(1)";
+});
+
+document.getElementById("fullscreenButton").addEventListener("mouseout", () => {
+    document.getElementById("app").style.opacity = 0.1;
+    document.getElementById("app").style.filter = "brightness(0.3)";
+});
+
+document.getElementById("psychoticModeSwitch").addEventListener("click", () => {
+    psychoticMode = !psychoticMode;
+});
+
+document.getElementById("psychoticModeContainer").addEventListener("mouseover", () => {
+    document.getElementById("app").style.opacity = 1;
+    document.getElementById("app").style.filter = "brightness(1)";
+});
+
+document.getElementById("psychoticModeContainer").addEventListener("mouseout", () => {
+    document.getElementById("app").style.opacity = 0.1;
+    document.getElementById("app").style.filter = "brightness(0.3)";
+});
+
+
+
 window.addEventListener("resize", () => {
     const { innerWidth, innerHeight } = window;
-    camera.aspect = innerWidth / innerHeight;
+    if (!renderer) return;
     camera.updateProjectionMatrix();
     renderer.setSize(innerWidth, innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -625,9 +636,26 @@ window.addEventListener("resize", () => {
 
 
 /* #region MusicBrainz API */
+/*
 const mbApi = new MusicBrainzApi({
     appName: "Three.js Music Visualizer",
     appVersion: "0.1.0",
     appContactInfo: "christopherbbody@gmail.com",
 });
+*/
 
+const constructQuery = (metadata) => {
+    //https://musicbrainz.org/ws/2/recording?query=%22we%20will%20rock%20you%22%20AND%20arid:0383dadf-2a4e-4d10-a46a-e9e041da8eb3
+    let query = "https://musicbrainz.org/ws/2/recording?";
+    if (metadata.common.title) {
+        query += `query="${metadata.common.title}"`;
+    }
+    if (metadata.common.artist) {
+        query += ` + artistname:${metadata.common.artist}`;
+    }
+    if (metadata.common.album) {
+        query += ` + release:${metadata.common.album}`;
+    }
+    query += "&fmt=json";
+    return query;
+};

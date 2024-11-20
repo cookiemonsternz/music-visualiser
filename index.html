@@ -11,7 +11,7 @@
         />
         <script src="//s3.amazonaws.com/scripting.com/code/includes/bootstrap.min.js"></script>
     </head>
-    <body style="background-color: #242424;">
+    <body style="background-color: #242424; overflow: hidden;">
         <div id="app">
             <div class="vBox" style="justify-content: flex-end;">
                 <div id="sideBar" class="vBox" style="width: fit-content">
@@ -68,13 +68,28 @@
                     </div>
                 </div>
             </div>
+            <div id="fullscreenContainer">
+                <button id="fullscreenButton">
+                    <img
+                        src="https://img.icons8.com/?size=30&id=38033&format=png&color=FFFFFF"
+                    />
+                </button>
+            </div>
+            <div id="psychoticModeContainer">
+                <div class="hBox">
+                    <p id="psychoticModeLabel"><b>Psychotic Mode</b></p>
+                    <label class="switch">
+                        <input type="checkbox" id="psychoticModeSwitch" />
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
         </div>
-		<!--
         <p style="
             margin: 0;
             position: absolute;
             left: 50%;
-            bottom: 100px;
+            bottom: 10px;
             transform: translateX(-50%);
             font-family: Arial, sans-serif;
             z-index: 1000;
@@ -89,7 +104,17 @@
                 >Icons8</a>
             </span>
         </p>
-		-->
+        <script type="importmap">
+            {
+                "imports": {
+                    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.webgpu.js",
+                    "three/webgpu": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.webgpu.js",
+                    "three/tsl": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.webgpu.js",
+                    "three/addons/tsl/display/BloomNode.js": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/tsl/display/BloomNode.js",
+                    "music-metadata": "https://cdn.jsdelivr.net/npm/music-metadata@10.6.0/+esm"
+                }
+            }
+        </script>
         <script type="module" src="./main.js"></script>
     </body>
 </html>
