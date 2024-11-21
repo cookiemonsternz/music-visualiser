@@ -158,8 +158,8 @@ button {
     color: rgb(48, 48, 48);
     font-size: 1rem;
     margin: 1rem;
-    margin-top: 0;
-    margin-right: auto;
+    margin-top: 0.5rem;
+    margin-right: 0.1rem;
     padding: 1rem;
     border-radius: 1rem;
     outline: 2px solid black;
@@ -187,10 +187,9 @@ button {
 }
 
 #psychoticModeContainer {
-    position: fixed;
-    bottom: 0;
-    right: 0;
-    margin: 1rem;
+    justify-self: flex-end;
+    margin-top: 0.1rem;
+    margin-right: 0.1rem;
     background-color: aquamarine;
     border-radius: 1rem;
     outline: 2px solid black;
@@ -235,16 +234,39 @@ button {
 
 #fullscreenContainer {
     flex: none;
-    position: fixed;
-    top: 0;
-    right: 0;
-    margin: 0.5rem;
+    align-self: flex-end;
     background: transparent;
 }
 
 #fullscreenButton {
     background-color: transparent;
     border: none;
+}
+
+#settingsContainer {
+    margin-top: 0.5rem;
+    flex: none;
+    justify-items: flex-end;
+    justify-content: flex-end;
+    background: transparent;
+}
+
+#settingsButton {
+    right: 0px;
+    background-color: transparent;
+    border: none;
+}
+
+#collapseSettings {
+    margin: 0.5rem;
+}
+
+#topRightContainer {
+    flex: none;
+    position: fixed;
+    top: 0;
+    right: 0;
+    margin: 1rem;
 }
 
 .sideBarButton {
