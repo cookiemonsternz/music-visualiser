@@ -54,6 +54,9 @@ export default class AudioManager {
             albumCover: "./static/album-covers/meteora.jpg",
             duration: 0
         }
+
+        this.timer = null;
+        this.timerElapsedTime = 0;
     }
 
     onHit(type) {
@@ -101,6 +104,8 @@ export default class AudioManager {
                     this.audio.setVolume(0.5);
                     this.audioContext = this.audio.context;
                     this.song.duration = String(Math.floor(buffer.duration/60) + ":" + Math.floor(buffer.duration%60));
+                    this.timer = new THREE.Clock();
+                    this.timerElapsedTime = 0;
                     resolve();
                 },
                 undefined,
@@ -194,8 +199,8 @@ export default class AudioManager {
         this.collectFrequencyData();
         this.analyseFrequencyData();
         this.lowerThresholds();
-        document.getElementById("currentTime").innerText = this.formatTime(this.audio.context.currentTime);
-        document.getElementById("timeSlider").value = this.audio.context.currentTime / this.audio.buffer.duration * 100;
+        document.getElementById("currentTime").innerText = this.formatTime(this.timer.getElapsedTime());
+        document.getElementById("timeSlider").value = this.timer.getElapsedTime() / this.audio.buffer.duration * 100;
     }
 
     formatTime(time) {
@@ -213,6 +218,8 @@ export default class AudioManager {
         if(!this.audio && !this.audio.buffer) return;
         this.audio.play();
         this.isPlaying = true;
+        this.timer.start();
+        this.timer.elapsedTime = this.timerElapsedTime;
         document.getElementById('playPause').src = "https://img.icons8.com/?size=100&id=61012&format=png";
         document.getElementById("app").style.opacity = 0.5;
         document.getElementById("app").style.filter = "brightness(0.3)";
@@ -222,6 +229,8 @@ export default class AudioManager {
         if(!this.audio) return;
         this.audio.pause();
         this.isPlaying = false;
+        this.timerElapsedTime = this.timer.getElapsedTime();
+        this.timer.stop();
         document.getElementById('playPause').src = "https://img.icons8.com/?size=100&id=59862&format=png";
         document.getElementById("app").style.opacity = 1;
         document.getElementById("app").style.filter = "brightness(1)";

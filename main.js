@@ -362,7 +362,6 @@ async function animate() {
         }
         camera.updateProjectionMatrix();
     }
-    
 }
 
 function cameraUp() {
@@ -559,16 +558,14 @@ document.getElementById("loadLocalButton").addEventListener("click", () => {
 });
 
 document.getElementById("loadLocalButton").addEventListener("mouseover", () => {
-    document.getElementById("app").style.opacity = 1;
-    document.getElementById("app").style.filter = "brightness(1)";
+    brightenApp();
 });
 
 document.getElementById("loadLocalButton").addEventListener("mouseout", () => {
-    document.getElementById("app").style.opacity = 0.1;
-    document.getElementById("app").style.filter = "brightness(0.3)";
+    dimApp();
 });
 
-document.getElementById("playPause").addEventListener("click", () => {
+document.getElementById("playPause").addEventListener("click", async () => {
     if (audioManager !== null) {
         if (audioManager.isPlaying) {
             audioManager.pause();
@@ -579,22 +576,23 @@ document.getElementById("playPause").addEventListener("click", () => {
         // if no song has been loaded, load the default
         if (!songLoaded) {
             audioManager = new AudioManager();
-            audioManager.loadAudio("./static/songDemo/07 - Linkin Park - By Myself.mp3");
-            init().then(() => {
-                audioManager.play();
-            });
+            audioManager.loadAudio(
+                "./static/songDemo/07 - Linkin Park - By Myself.mp3"
+            );
+            await init();
+            await new Promise((resolve) => setTimeout(resolve, 500));
+            audioManager.play();
+            songLoaded = true;
         }
     }
 });
 
 document.getElementById("songInfo").addEventListener("mouseover", () => {
-    document.getElementById("app").style.opacity = 1;
-    document.getElementById("app").style.filter = "brightness(1)";
+    brightenApp();
 });
 
 document.getElementById("songInfo").addEventListener("mouseout", () => {
-    document.getElementById("app").style.opacity = 0.1;
-    document.getElementById("app").style.filter = "brightness(0.3)";
+    dimApp();
 });
 
 document.getElementById("timeSlider").addEventListener("mouseover", () => {
@@ -625,13 +623,11 @@ document.getElementById("particleCount").addEventListener("input", () => {
 });
 
 document.getElementById("sliderContainer").addEventListener("mouseover", () => {
-    document.getElementById("app").style.opacity = 1;
-    document.getElementById("app").style.filter = "brightness(1)";
+    brightenApp();
 });
 
 document.getElementById("sliderContainer").addEventListener("mouseout", () => {
-    document.getElementById("app").style.opacity = 0.1;
-    document.getElementById("app").style.filter = "brightness(0.3)";
+    dimApp();
 });
 
 document.getElementById("fullscreenButton").addEventListener("click", () => {
@@ -645,13 +641,11 @@ document.getElementById("fullscreenButton").addEventListener("click", () => {
 document
     .getElementById("fullscreenButton")
     .addEventListener("mouseover", () => {
-        document.getElementById("app").style.opacity = 1;
-        document.getElementById("app").style.filter = "brightness(1)";
+        brightenApp();
     });
 
 document.getElementById("fullscreenButton").addEventListener("mouseout", () => {
-    document.getElementById("app").style.opacity = 0.1;
-    document.getElementById("app").style.filter = "brightness(0.3)";
+    dimApp();
 });
 
 document.getElementById("psychoticModeSwitch").addEventListener("click", () => {
@@ -684,15 +678,13 @@ document.getElementById("psychoticModeSwitch").addEventListener("click", () => {
 document
     .getElementById("psychoticModeContainer")
     .addEventListener("mouseover", () => {
-        document.getElementById("app").style.opacity = 1;
-        document.getElementById("app").style.filter = "brightness(1)";
+        brightenApp();
     });
 
 document
     .getElementById("psychoticModeContainer")
     .addEventListener("mouseout", () => {
-        document.getElementById("app").style.opacity = 0.1;
-        document.getElementById("app").style.filter = "brightness(0.3)";
+        dimApp();
     });
 
 window.addEventListener("resize", () => {
@@ -703,6 +695,23 @@ window.addEventListener("resize", () => {
     renderer.setSize(innerWidth, innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
 });
+
+
+function dimApp() {
+    if (audioManager == null) {
+        return;
+    } 
+    if (!audioManager.isPlaying) {
+        return;
+    }
+    document.getElementById("app").style.opacity = 0.1;
+    document.getElementById("app").style.filter = "brightness(0.3)";
+}
+
+function brightenApp() {
+    document.getElementById("app").style.opacity = 1;
+    document.getElementById("app").style.filter = "brightness(1)";
+}
 /* #endregion */
 
 /* #region MusicBrainz API */
@@ -730,9 +739,9 @@ const constructQuery = (metadata) => {
     return query;
 };
 
-
 document.getElementById("songTitle").innerText = "By Myself";
 document.getElementById("songArtist").innerText = "Linkin Park";
 document.getElementById("songAlbum").innerText = "Hybrid Theory";
-document.getElementById("albumCover").src = "https://ia801909.us.archive.org/1/items/mbid-95e96595-d34d-440e-be29-2c3c02895f0b/mbid-95e96595-d34d-440e-be29-2c3c02895f0b-27469140357_thumb250.jpg";
+document.getElementById("albumCover").src =
+    "https://ia801909.us.archive.org/1/items/mbid-95e96595-d34d-440e-be29-2c3c02895f0b/mbid-95e96595-d34d-440e-be29-2c3c02895f0b-27469140357_thumb250.jpg";
 document.getElementById("songDuration").innerText = "3:09";
