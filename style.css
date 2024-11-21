@@ -154,24 +154,34 @@ button {
     padding-bottom: 0.5rem;
 }
 
-#sliderContainer {
+.sliderContainer {
     color: rgb(48, 48, 48);
     font-size: 1rem;
     margin: 1rem;
-    margin-top: 0.5rem;
+    margin-top: 0.1rem;
+    margin-bottom: 0.5rem;
     margin-right: 0.1rem;
     padding: 1rem;
+    width: fit-content;
+    height: fit-content;
+    margin-left: auto;
     border-radius: 1rem;
     outline: 2px solid black;
     background: aquamarine;
+    justify-content: flex-end;
+    justify-items: flex-end;
+}
+
+#particleCountContainer {
     min-width: 29rem;
+    margin-left: 1rem;
 }
 
 #particleCountDisplay {
     min-width: 5rem;
 }
 
-#sliderContainer p {
+.sliderContainer p {
     margin-top: 0.7rem;
     margin-right: 0.7rem;
 }
@@ -190,6 +200,7 @@ button {
     justify-self: flex-end;
     margin-top: 0.1rem;
     margin-right: 0.1rem;
+    margin-bottom: 1rem;
     background-color: aquamarine;
     border-radius: 1rem;
     outline: 2px solid black;
@@ -197,6 +208,32 @@ button {
     padding-left: 0.7rem;
     padding-right: 0.7rem;
     height: fit-content;
+}
+
+#colorPresetContainer {
+    font-size: 24px;
+    margin-top: 0.1rem;
+    margin-right: 0.5rem;
+    margin-bottom: 0.5rem;
+    background-color: aquamarine;
+    border-radius: 1rem;
+    outline: 2px solid black;
+    padding: 0.5rem;
+    padding-left: 0.7rem;
+    padding-right: 0.7rem;
+    height: fit-content;
+    width: fit-content;
+    justify-self: flex-end;
+    justify-content: flex-end;
+}
+
+.colorPresetBtn {
+    font-size: 28px;
+}
+
+.colorPresetLabel {
+    margin-top: 0.5rem;
+    color: rgb(48, 48, 48);
 }
 
 #playButton {
@@ -218,7 +255,7 @@ button {
 #playPause {
     transition: opacity 0.5s;
     background: transparent;
-    opacity: 0.25;
+    opacity: 0.75;
     position: absolute;
     top: 31%;
     left: 31%;
@@ -297,6 +334,14 @@ button {
 .hBox {
     display: flex;
     flex-direction: row;
+}
+
+.hBox-autoLeft {
+    display: flex;
+    flex-direction: row;
+    justify-items: flex-end;
+    justify-content: flex-end;
+    width: fit-content;
 }
 
 .vBox {

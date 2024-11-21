@@ -103,7 +103,7 @@ export default class AudioManager {
                 (buffer) => {
                     this.audio.setBuffer(buffer);
                     this.audio.setLoop(true);
-                    this.audio.setVolume(0.5);
+                    this.audio.setVolume(document.getElementById("volumeSlider").value / 100);
                     this.audioContext = this.audio.context;
                     this.song.duration = String(Math.floor(buffer.duration/60) + ":" + Math.floor(buffer.duration%60));
                     resolve();
@@ -205,8 +205,8 @@ export default class AudioManager {
 
     formatTime(time) {
         const minutes = Math.floor(time / 60);
-        const seconds = Math.floor(time % 60);
-        return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        const seconds = this.pad(Math.floor(time % 60).toString(), 2);
+        return `${minutes}:${seconds}`;
     }
 
     setTime(percentage) {
@@ -220,8 +220,8 @@ export default class AudioManager {
         this.isPlaying = true;
         this.timer.start();
         this.timer.elapsedTime = this.timerElapsedTime;
-        document.getElementById('playPause').src = "https://img.icons8.com/?size=100&id=61012&format=png";
-        document.getElementById("app").style.opacity = 0.5;
+        document.getElementById('playPause').src = "https://img.icons8.com/?size=100&id=36268&format=png&color=FFFFFF";
+        document.getElementById("app").style.opacity = 0.1;
         document.getElementById("app").style.filter = "brightness(0.3)";
     }
 
@@ -231,8 +231,9 @@ export default class AudioManager {
         this.isPlaying = false;
         this.timerElapsedTime = this.timer.getElapsedTime();
         this.timer.stop();
-        document.getElementById('playPause').src = "https://img.icons8.com/?size=100&id=59862&format=png";
+        document.getElementById('playPause').src = "https://img.icons8.com/?size=100&id=36067&format=png&color=FFFFFF";
         document.getElementById("app").style.opacity = 1;
         document.getElementById("app").style.filter = "brightness(1)";
     }
 }
+

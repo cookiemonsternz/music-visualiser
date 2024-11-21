@@ -6,7 +6,7 @@
 - [ ] Audio seeking, requires rework to use webaudio instead of threejs as audio source
 - [ ] google search for album covers when not found on MusicBrainz
 - [ ] Mobile UI
-- [ ] Volume Slider
+- [X] Volume Slider
 - [ ] Intensity slider
 - [ ] Color Schemes
 - [X] Collapsible settings menu

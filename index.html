@@ -34,7 +34,7 @@
                             <img
                                 id="playPause"
                                 class="playPause"
-                                src="https://img.icons8.com/?size=100&id=59862&format=png"
+                                src="https://img.icons8.com/?size=100&id=36067&format=png&color=FFFFFF"
                             />
                         </button>
                         <div class="vBox" id="songDetails">
@@ -64,48 +64,68 @@
                     </div>
                 </div>
             </div>
-            <div id="topRightContainer" class="vBox">
-                <div id="fullscreenContainer">
-                    <button id="fullscreenButton">
-                        <img
-                            src="https://img.icons8.com/?size=30&id=38033&format=png&color=FFFFFF"
-                        />
-                    </button>
-                </div>
-                <div id="settingsContainer">
-                    <button
-                        id="settingsButton"
-                        data-toggle="collapse"
-                        data-target="#collapseSettings"
-                    >
-                        <img
-                            src="https://img.icons8.com/?size=30&id=4511GGVppfIx&format=png&color=FFFFFF"
-                        />
-                    </button>
-                    <div class="collapse" id="collapseSettings">
-                        <div id="sliderContainer">
-                            <div class="hBox">
-                                <p><b>Particle Count : </b></p>
-                                <p id="particleCountDisplay"><b>300,000</b></p>
-                                <input
-                                    type="range"
-                                    id="particleCount"
-                                    min="300"
-                                    max="1000000"
-                                    value="300000"
-                                />
-                            </div>
+        </div>
+        <div id="topRightContainer" class="vBox">
+            <div id="fullscreenContainer">
+                <button id="fullscreenButton">
+                    <img
+                        src="https://img.icons8.com/?size=30&id=38033&format=png&color=FFFFFF"
+                    />
+                </button>
+            </div>
+            <div id="settingsContainer">
+                <button
+                    id="settingsButton"
+                    data-toggle="collapse"
+                    data-target="#collapseSettings"
+                >
+                    <img
+                        src="https://img.icons8.com/?size=30&id=4511GGVppfIx&format=png&color=FFFFFF"
+                    />
+                </button>
+                <div class="collapse" id="collapseSettings">
+                    <div class="sliderContainer" id="particleCountContainer">
+                        <div class="hBox-autoLeft">
+                            <p><b>Particle Count : </b></p>
+                            <p id="particleCountDisplay"><b>300,000</b></p>
+                            <input
+                                type="range"
+                                id="particleCount"
+                                min="300"
+                                max="1000000"
+                                value="300000"
+                            />
                         </div>
-                        <div class="hBox" id="psychoticModeContainer">
-                            <p id="psychoticModeLabel"><b>Psychotic Mode</b></p>
-                            <label class="switch">
-                                <input
-                                    type="checkbox"
-                                    id="psychoticModeSwitch"
-                                />
-                                <span class="slider round"></span>
-                            </label>
+                    </div>
+                    <div class="sliderContainer">
+                        <div class="hBox-autoLeft">
+                            <p><b>Volume : </b></p>
+                            <input
+                                type="range"
+                                id="volumeSlider"
+                                min="0"
+                                max="140"
+                                value="50"
+                            />
                         </div>
+                    </div>
+                    <b>
+                    <div class="hBox" id="colorPresetContainer">
+                        <p class="colorPresetLabel" style="font-size: 16px;">Color Preset</p>
+                        <button id="colorPresetLeft" class="colorPresetBtn"><</button>
+                        <p class="colorPresetLabel" id="colorPresetLabel">0</p>
+                        <button id="colorPresetRight" class="colorPresetBtn">></button>
+                    </div>
+                    </b>
+                    <div class="hBox" id="psychoticModeContainer">
+                        <p id="psychoticModeLabel"><b>Psychotic Mode</b></p>
+                        <label class="switch">
+                            <input
+                                type="checkbox"
+                                id="psychoticModeSwitch"
+                            />
+                            <span class="slider round"></span>
+                        </label>
                     </div>
                 </div>
             </div>

@@ -35,6 +35,9 @@ const attractorPosition = uniform(vec3(0, 0, 0));
 const attractorRadius = uniform(1000.0);
 const attractorStrength = uniform(0.0);
 
+
+const colorPreset = uniform(3);
+
 let camera, scene, renderer, postProcessing, pass1, pass2;
 let stats;
 let computeParticles, updateAttractor;
@@ -85,6 +88,7 @@ async function init() {
     const attractorPositionBuffer = createBuffer(1, 3);
     const attractorRadiusBuffer = createBuffer(1, 1);
     const attractorStrengthBuffer = createBuffer(1, 1);
+    
     /* #endregion */
 
     // Particle Init Compute Shader
@@ -146,14 +150,41 @@ async function init() {
         position.addAssign(velocity.mul(timeScale));
 
         transparent.x = float(1).sub(position.length().div(55));
-
-        color.assign(
-            vec3(
-                force.length().add(position.length().div(50)),
-                attractorStrengthB.mul(position.length()).div(1000),
-                velocity.length().add(hash(instanceIndex))
-            )
-        );
+        If(colorPreset.equal(0), () => {
+            color.assign(
+                vec3(
+                    force.length().add(position.length().div(50)),
+                    attractorStrengthB.mul(position.length()).div(1000),
+                    velocity.length().add(hash(instanceIndex))
+                )
+            );
+        }).ElseIf(colorPreset.equal(1), () => {
+            color.assign(
+                vec3(
+                    attractorStrengthB.div(float(1).add(attractorStrengthB.abs()).add(attractorStrengthB)).abs().div(2),
+                    attractorStrengthB.div(80).mul(position.length().div(2).pow(2)).clamp(0, 1),
+                    velocity.length().mul(1.5).clamp(0, 1)
+                )
+            );
+        }).ElseIf(colorPreset.equal(2), () => {
+            color.assign(
+                vec3(
+                    velocity.length().sin().add(0.1).mul(attractorStrengthB).clamp(0, 3),
+                    attractorStrengthB.mul(velocity.length().div(100)).div(float(-1).mul(attractorStrengthB)).clamp(0, 3),
+                    attractorStrengthB.mul(velocity.length().div(500)).clamp(0, 0.5)
+                )
+            );
+        }).ElseIf(colorPreset.equal(3), () => {
+            color.assign(
+                vec3(
+                    velocity.length().sin().add(0.1).mul(attractorStrengthB.div(position.length().mul(5))).clamp(0, 2),
+                    attractorStrengthB.mul(velocity.length().div(300)).clamp(0, 2),
+                    velocity.length().add(hash(instanceIndex)).mul(2)
+                )
+            );
+        });
+        
+        
         If(attractorStrengthB.lessThan(float(0)), () => {
             color.assign(vec3(1, 1, 1));
         });
@@ -263,7 +294,11 @@ async function onHit() {
         timeScale.value = 0.85;
     }
     await new Promise((resolve) => setTimeout(resolve, 800));
-    timeScale.value = 1.0;
+    if(!psychoticMode) {
+        timeScale.value = 1.0;
+    } else {
+        timeScale.value = 1.25;
+    }
     postProcessing = new THREE.PostProcessing(renderer);
     postProcessing.outputNode = pass1;
     doingProcessEffect = false;
@@ -347,6 +382,7 @@ async function animate() {
                         ).clamp(-1, 1)
                 ) * 60;
             camera.lookAt(0, 0, 0);
+            console.log(attractorStrength.value);
         }
     } else {
         // orbit camera
@@ -425,23 +461,19 @@ async function setSongDetails(file) {
     /* #endregion */
 
     document.getElementById("songTitle").innerText = metadata.common.title
-        ? metadata.common.title.toTitleCase()
+        ? metadata.common.title
         : "Unknown";
     document.getElementById("songArtist").innerText = metadata.common.artist
         ? metadata.common.artist.toTitleCase()
         : "Unknown";
     document.getElementById("songAlbum").innerText = metadata.common.album
-        ? metadata.common.album.toTitleCase()
+        ? metadata.common.album
         : "Unknown";
     document.getElementById("albumCover").src = coverResult
         ? coverResult.url
         : "./static/defaultAlbumCover.jpg";
     document.getElementById("songDuration").innerText = metadata.format.duration
-        ? String(
-              Math.floor(metadata.format.duration / 60) +
-                  ":" +
-                  Math.floor(metadata.format.duration % 60)
-          )
+        ? Math.round(metadata.format.duration / 60) + ":" + Math.round(metadata.format.duration % 60).toString().padStart(2, "0")
         : "Unknown";
     //}
 }
@@ -622,6 +654,13 @@ document.getElementById("particleCount").addEventListener("input", () => {
     )}</b>`;
 });
 
+document.getElementById("volumeSlider").addEventListener("input", () => {
+    if (audioManager !== null) {
+        audioManager.audio.setVolume(document.getElementById("volumeSlider").value / 100);
+    }
+});
+
+/*
 document.getElementById("sliderContainer").addEventListener("mouseover", () => {
     brightenApp();
 });
@@ -629,6 +668,7 @@ document.getElementById("sliderContainer").addEventListener("mouseover", () => {
 document.getElementById("sliderContainer").addEventListener("mouseout", () => {
     dimApp();
 });
+*/
 
 document.getElementById("fullscreenButton").addEventListener("click", () => {
     if (document.fullscreenElement) {
@@ -639,12 +679,12 @@ document.getElementById("fullscreenButton").addEventListener("click", () => {
 });
 
 document
-    .getElementById("fullscreenButton")
+    .getElementById("topRightContainer")
     .addEventListener("mouseover", () => {
         brightenApp();
     });
 
-document.getElementById("fullscreenButton").addEventListener("mouseout", () => {
+document.getElementById("topRightContainer").addEventListener("mouseout", () => {
     dimApp();
 });
 
@@ -660,6 +700,7 @@ document.getElementById("psychoticModeSwitch").addEventListener("click", () => {
 
         postProcessing = new THREE.PostProcessing(renderer);
         postProcessing.outputNode = pass1;
+        timeScale.value = 1.0;
     } else {
         const scenePass = pass(scene, camera);
         const bloomMult = -particleCount / 1000000 + 1.8;
@@ -672,6 +713,7 @@ document.getElementById("psychoticModeSwitch").addEventListener("click", () => {
 
         postProcessing = new THREE.PostProcessing(renderer);
         postProcessing.outputNode = pass1;
+        timeScale.value = 1.25;
     }
 });
 
@@ -686,6 +728,25 @@ document
     .addEventListener("mouseout", () => {
         dimApp();
     });
+
+document.getElementById("colorPresetLeft").addEventListener("click", () => {
+    if(colorPreset.value == 0) {
+        colorPreset.value = 3;
+    } else {
+        colorPreset.value = colorPreset.value - 1;
+    }
+    document.getElementById("colorPresetLabel").innerText = colorPreset.value;
+});
+
+document.getElementById("colorPresetRight").addEventListener("click", () => {
+    if(colorPreset.value == 3) {
+        colorPreset.value = 0;
+    } else {
+        colorPreset.value = colorPreset.value + 1;
+    }
+    document.getElementById("colorPresetLabel").innerText = colorPreset.value;
+});
+
 
 window.addEventListener("resize", () => {
     const { innerWidth, innerHeight } = window;
@@ -745,3 +806,5 @@ document.getElementById("songAlbum").innerText = "Hybrid Theory";
 document.getElementById("albumCover").src =
     "https://ia801909.us.archive.org/1/items/mbid-95e96595-d34d-440e-be29-2c3c02895f0b/mbid-95e96595-d34d-440e-be29-2c3c02895f0b-27469140357_thumb250.jpg";
 document.getElementById("songDuration").innerText = "3:09";
+
+
