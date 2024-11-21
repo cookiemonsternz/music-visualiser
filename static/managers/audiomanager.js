@@ -86,6 +86,8 @@ export default class AudioManager {
 
     async loadAudio(audioUrl = this.song.url) {
         return new Promise((resolve, reject) => {
+            this.timer = new THREE.Clock();
+            this.timerElapsedTime = 0;
             this.audioListener = new THREE.AudioListener();
             this.audio = new THREE.Audio(this.audioListener);
             // create fft
@@ -104,8 +106,6 @@ export default class AudioManager {
                     this.audio.setVolume(0.5);
                     this.audioContext = this.audio.context;
                     this.song.duration = String(Math.floor(buffer.duration/60) + ":" + Math.floor(buffer.duration%60));
-                    this.timer = new THREE.Clock();
-                    this.timerElapsedTime = 0;
                     resolve();
                 },
                 undefined,
