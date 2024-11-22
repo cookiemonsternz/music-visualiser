@@ -236,6 +236,13 @@ button {
     color: rgb(48, 48, 48);
 }
 
+#srcButton {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    margin: 1rem;
+}
+
 #playButton {
     background-color: aquamarine;
     color: beige;

@@ -8,5 +8,5 @@
 - [ ] Mobile UI
 - [X] Volume Slider
 - [ ] Intensity slider
-- [ ] Color Schemes
+- [X] Color Schemes
 - [X] Collapsible settings menu

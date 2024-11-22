@@ -665,6 +665,14 @@ document.getElementById("volumeSlider").addEventListener("input", () => {
     }
 });
 
+document.getElementById("srcButton").addEventListener("mouseover", () => {
+    brightenApp();
+});
+
+document.getElementById("srcButton").addEventListener("mouseout", () => {
+    dimApp();
+});
+
 /*
 document.getElementById("sliderContainer").addEventListener("mouseover", () => {
     brightenApp();
