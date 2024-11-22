@@ -36,7 +36,7 @@ const attractorRadius = uniform(1000.0);
 const attractorStrength = uniform(0.0);
 
 
-const colorPreset = uniform(3);
+const colorPreset = uniform(0);
 
 let camera, scene, renderer, postProcessing, pass1, pass2;
 let stats;
@@ -161,17 +161,18 @@ async function init() {
         }).ElseIf(colorPreset.equal(1), () => {
             color.assign(
                 vec3(
-                    attractorStrengthB.div(float(1).add(attractorStrengthB.abs()).add(attractorStrengthB)).abs().div(2),
+                    //attractorStrengthB.div(float(1).add(attractorStrengthB.abs()).add(attractorStrengthB)).abs().div(2),
+                    force.length().add(position.length().div(50)).mul(attractorStrengthB).div(75),
                     attractorStrengthB.div(80).mul(position.length().div(2).pow(2)).clamp(0, 1),
-                    velocity.length().mul(1.5).clamp(0, 1)
+                    velocity.length().mul(1.5).clamp(0, 1).add(hash(instanceIndex).mul(0.5))
                 )
             );
         }).ElseIf(colorPreset.equal(2), () => {
             color.assign(
                 vec3(
                     velocity.length().sin().add(0.1).mul(attractorStrengthB).clamp(0, 3),
-                    attractorStrengthB.mul(velocity.length().div(100)).div(float(-1).mul(attractorStrengthB)).clamp(0, 3),
-                    attractorStrengthB.mul(velocity.length().div(500)).clamp(0, 0.5)
+                    attractorStrengthB.mul(velocity.length().div(30)),
+                    attractorStrengthB.mul(velocity.length().div(300)).clamp(0, 0.8)
                 )
             );
         }).ElseIf(colorPreset.equal(3), () => {
@@ -324,6 +325,11 @@ async function animate() {
     if (audioManager !== null) {
         if (audioManager.audio !== null && audioManager.audioContext !== null) {
             audioManager.update();
+            if(!doingProcessEffect) {
+                timeScale.value = audioManager.frequencyData.low + 0.5;
+                console.log(timeScale.value);     
+            }
+            
             if (
                 audioManager.frequencyData.low * 100 >
                 audioManager.thresholds.highest
@@ -382,7 +388,6 @@ async function animate() {
                         ).clamp(-1, 1)
                 ) * 60;
             camera.lookAt(0, 0, 0);
-            console.log(attractorStrength.value);
         }
     } else {
         // orbit camera
