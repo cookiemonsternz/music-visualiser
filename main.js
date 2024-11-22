@@ -16,13 +16,9 @@ import {
 } from "three/tsl";
 
 import { bloom } from "three/addons/tsl/display/BloomNode.js";
-//import { Stats } from "three/addons/libs/stats.module.js";
 import { parseBlob } from "music-metadata";
-//import { MusicBrainzApi } from "musicbrainz-api";
 
 let particleCount = 300000;
-// attractors buffer size + other stuff
-// Keep as low as possible bc it loops this many times on the particle shader
 
 const gravity = uniform(vec3(0, 0, 0));
 const damping = uniform(0.9);
@@ -39,7 +35,6 @@ const attractorStrength = uniform(0.0);
 const colorPreset = uniform(0);
 
 let camera, scene, renderer, postProcessing, pass1, pass2;
-let stats;
 let computeParticles, updateAttractor;
 let psychoticMode = false;
 
@@ -47,7 +42,7 @@ let audioManager = null;
 let songLoaded = false;
 let doingProcessEffect = false;
 async function init() {
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 300));
     /* #region  Basic Scene */
     const { innerWidth, innerHeight } = window;
     camera = new THREE.PerspectiveCamera(
@@ -88,9 +83,9 @@ async function init() {
     const attractorPositionBuffer = createBuffer(1, 3);
     const attractorRadiusBuffer = createBuffer(1, 1);
     const attractorStrengthBuffer = createBuffer(1, 1);
-    
     /* #endregion */
 
+    /* #region  Compute Shaders */
     // Particle Init Compute Shader
     const computeInit = Fn(() => {
         // storage has an method "element" that returns the element at the given index
@@ -161,7 +156,6 @@ async function init() {
         }).ElseIf(colorPreset.equal(1), () => {
             color.assign(
                 vec3(
-                    //attractorStrengthB.div(float(1).add(attractorStrengthB.abs()).add(attractorStrengthB)).abs().div(2),
                     force.length().add(position.length().div(50)).mul(attractorStrengthB).div(75),
                     attractorStrengthB.div(80).mul(position.length().div(2).pow(2)).clamp(0, 1),
                     velocity.length().mul(1.5).clamp(0, 1).add(hash(instanceIndex).mul(0.5))
@@ -185,7 +179,6 @@ async function init() {
             );
         });
         
-        
         If(attractorStrengthB.lessThan(float(0)), () => {
             color.assign(vec3(1, 1, 1));
         });
@@ -204,6 +197,7 @@ async function init() {
         const attractorStrengthB = attractorStrengthBuffer.element(0);
         attractorStrengthB.x = attractorStrength;
     });
+    /* #endregion */
 
     /* #region  init compute shaders */
     // create compute shaders
@@ -253,11 +247,7 @@ async function init() {
 
     /* #endregion */
 
-    /* #region  FPS Counter */
-    //stats = new Stats();
-    //document.body.appendChild(stats.dom);
-    /* #endregion */
-
+    /* #region  Post Processing */
     renderer.computeAsync(computeInit);
     if (!psychoticMode) {
         const scenePass = pass(scene, camera);
@@ -282,32 +272,42 @@ async function init() {
         postProcessing = new THREE.PostProcessing(renderer);
         postProcessing.outputNode = pass1;
     }
+    /* #endregion */
 }
 
 async function onHit() {
     if (doingProcessEffect) return;
+
     doingProcessEffect = true;
+
+    // Change to post processing pass 2, aka the "hit" pass (more bloom but only in psychotic mode, regular its the same lol)
     postProcessing = new THREE.PostProcessing(renderer);
     postProcessing.outputNode = pass2;
+
+    // Time scale, adds impact
     if (psychoticMode) {
         timeScale.value = 0.1;
     } else {
         timeScale.value = 0.85;
     }
+
     await new Promise((resolve) => setTimeout(resolve, 800));
+
+    // reset time scale
     if(!psychoticMode) {
         timeScale.value = 1.0;
     } else {
         timeScale.value = 1.25;
     }
+
+    // Change back to post processing pass 1
     postProcessing = new THREE.PostProcessing(renderer);
     postProcessing.outputNode = pass1;
+
     doingProcessEffect = false;
 }
 
 async function animate() {
-    //stats.update();
-
     // update attractor
     await renderer.computeAsync(updateAttractor);
 
@@ -318,18 +318,21 @@ async function animate() {
     await postProcessing.renderAsync();
 
     let strMultiplier = 1;
+
     if (psychoticMode) {
         strMultiplier = Math.sin(performance.now() / 1000) * 0.5 + 1;
     }
 
-    if (audioManager !== null) {
+    if (audioManager !== null) { 
         if (audioManager.audio !== null && audioManager.audioContext !== null) {
+
             audioManager.update();
+
             if(!doingProcessEffect) {
                 timeScale.value = audioManager.frequencyData.low + 0.5;
                 console.log(timeScale.value);     
             }
-            
+            // Highest Hit
             if (
                 audioManager.frequencyData.low * 100 >
                 audioManager.thresholds.highest
@@ -339,7 +342,9 @@ async function animate() {
                 );
                 cameraUp();
                 audioManager.onHit("highest");
-            } else if (
+            } 
+            // High Hit
+            else if (
                 audioManager.frequencyData.low * 100 >
                 audioManager.thresholds.high
             ) {
@@ -347,7 +352,9 @@ async function animate() {
                     audioManager.frequencyData.low * 100
                 );
                 audioManager.onHit("high");
-            } else if (
+            } 
+            // Medium Hit
+            else if (
                 audioManager.frequencyData.low * 100 >
                 audioManager.thresholds.medium
             ) {
@@ -355,11 +362,14 @@ async function animate() {
                     audioManager.frequencyData.low * 40 * strMultiplier
                 );
                 audioManager.onHit("medium");
-            } else {
+            } 
+            // Regular mode
+            else {
                 attractorStrength.value = Math.round(
                     audioManager.frequencyData.low * 20 * strMultiplier
                 );
             }
+            // Add some mids, just for fun
             attractorStrength.value += Math.round(
                 audioManager.frequencyData.mid *
                     40 *
@@ -370,7 +380,7 @@ async function animate() {
                         )) *
                     strMultiplier
             );
-            // orbit camera
+            // orbit camera depending on the music
             camera.position.x =
                 Math.sin(
                     performance.now() *
@@ -390,11 +400,13 @@ async function animate() {
             camera.lookAt(0, 0, 0);
         }
     } else {
-        // orbit camera
+        // orbit camera without music
         camera.position.x = Math.sin(performance.now() * 0.0003) * 60;
         camera.position.z = Math.cos(performance.now() * 0.0003) * 60;
         camera.lookAt(0, 0, 0);
     }
+
+    // cameraUp() zooms in fov, this constantly zooms out
     if (camera.fov < 70) {
         if (!psychoticMode) {
             camera.fov += 0.5;
@@ -411,20 +423,27 @@ function cameraUp() {
     } else {
         camera.fov = 10;
     }
+    // need this to update fov
     camera.updateProjectionMatrix();
     onHit();
 }
 
 async function readFile(file) {
+    // Get url from file
     var url = window.URL.createObjectURL(file);
+    // Load audio from url
     audioManager = new AudioManager();
     await audioManager.loadAudio(url);
+    // Get album cover + song metadata
     await setSongDetails(file);
+    // init compute shaders + renderer
     await init();
+    // Play audio
     audioManager.play();
 }
 
 async function openDialogCommand(fileTypes) {
+    // Basically add a file input element to the body, trigger a click event, and remove the element
     var theDialog = $(
         '<input type="file" accept="' + fileTypes + '" style="display: none;">'
     );
@@ -439,31 +458,29 @@ async function openDialogCommand(fileTypes) {
 }
 
 async function loadLocalFile() {
+    // This is to check if a user has loaded any song at any point, so the demo song isn't played or something
     songLoaded = true;
+    // If a song playing pause it
     if (audioManager !== null) {
         audioManager.pause();
     }
+
+    // Reset song details
     document.getElementById("songTitle").innerText = "Loading...";
     document.getElementById("songArtist").innerText = "Loading...";
     document.getElementById("songAlbum").innerText = "Loading...";
     document.getElementById("albumCover").src =
         "./static/defaultAlbumCover.jpg";
     document.getElementById("songDuration").innerText = "Loading...";
+    // probs don't support alac, wma or opus but whatever, can't be bothered to check
     openDialogCommand(".mp3,.wav,.flac,.m4a,.aac,.ogg,.aiff,.alac,.wma,.opus");
 }
 
 async function setSongDetails(file) {
-    console.log(file);
-
+    // parseBlob is from music-metadata
     const metadata = await parseBlob(file);
-    console.log(metadata);
-    console.log(metadata.common.isrc);
 
-    /* #region  Music Cover Art */
     let coverResult = await getCoverArt(metadata);
-    console.log(coverResult);
-    //let coverResult = null;
-    /* #endregion */
 
     document.getElementById("songTitle").innerText = metadata.common.title
         ? metadata.common.title
@@ -480,11 +497,10 @@ async function setSongDetails(file) {
     document.getElementById("songDuration").innerText = metadata.format.duration
         ? Math.round(metadata.format.duration / 60) + ":" + Math.round(metadata.format.duration % 60).toString().padStart(2, "0")
         : "Unknown";
-    //}
 }
-//init();
 
 async function getCoverArt(metadata) {
+    // can't be bothered commenting this
     if (
         !metadata.common.album ||
         !metadata.common.artist ||
@@ -495,8 +511,6 @@ async function getCoverArt(metadata) {
     // Get song from MusicBrainz
     let searchResults, coverResult;
     if (metadata.common.artist ? true : false) {
-        //const query = `query="${metadata.common.title}" + artistname:${metadata.common.artist} + recording:${metadata.common.title} + release:${metadata.common.album}`;
-        //searchResults = await mbApi.search("recording", { query });
         searchResults = await fetch(constructQuery(metadata), {
             method: "GET",
             headers: {
@@ -504,7 +518,6 @@ async function getCoverArt(metadata) {
                     "Three.js Music Visualizer/0.1.0 (Christopherbbody@gmail.com)",
             },
         }).then((response) => response.json());
-        //console.log(searchResults);
     }
 
     if (!searchResults || !searchResults.recordings) {
@@ -565,9 +578,12 @@ async function getCoverArt(metadata) {
 }
 
 function formatNumber(num) {
+    // used for formatting the particle count display (slider thingy)
+    // https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
+// copy pasted from google lol
 /**
  * Returns a number whose value is limited to the given range.
  *
@@ -590,6 +606,7 @@ String.prototype.toTitleCase = function () {
 };
 
 /* #region  Event Listeners */
+// this is bad but the way i originally had my code set up, i had to do this, probs should change it
 document.getElementById("loadLocalButton").addEventListener("click", () => {
     loadLocalFile();
 });
@@ -672,16 +689,6 @@ document.getElementById("srcButton").addEventListener("mouseover", () => {
 document.getElementById("srcButton").addEventListener("mouseout", () => {
     dimApp();
 });
-
-/*
-document.getElementById("sliderContainer").addEventListener("mouseover", () => {
-    brightenApp();
-});
-
-document.getElementById("sliderContainer").addEventListener("mouseout", () => {
-    dimApp();
-});
-*/
 
 document.getElementById("fullscreenButton").addEventListener("click", () => {
     if (document.fullscreenElement) {
@@ -788,17 +795,10 @@ function brightenApp() {
 }
 /* #endregion */
 
-/* #region MusicBrainz API */
-/*
-const mbApi = new MusicBrainzApi({
-    appName: "Three.js Music Visualizer",
-    appVersion: "0.1.0",
-    appContactInfo: "christopherbbody@gmail.com",
-});
-*/
-
 const constructQuery = (metadata) => {
-    //https://musicbrainz.org/ws/2/recording?query=%22we%20will%20rock%20you%22%20AND%20arid:0383dadf-2a4e-4d10-a46a-e9e041da8eb3
+    // construct url for fetch get request, see https://musicbrainz.org/doc/MusicBrainz_API/Search
+    // example url:
+    // https://musicbrainz.org/ws/2/recording?query=%22we%20will%20rock%20you%22%20AND%20arid:0383dadf-2a4e-4d10-a46a-e9e041da8eb3
     let query = "https://musicbrainz.org/ws/2/recording?";
     if (metadata.common.title) {
         query += `query="${metadata.common.title}"`;
@@ -813,6 +813,8 @@ const constructQuery = (metadata) => {
     return query;
 };
 
+
+// Default song details (demo song)
 document.getElementById("songTitle").innerText = "By Myself";
 document.getElementById("songArtist").innerText = "Linkin Park";
 document.getElementById("songAlbum").innerText = "Hybrid Theory";

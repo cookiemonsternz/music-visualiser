@@ -18,7 +18,7 @@ export default class AudioManager {
             high: 0
         }
         
-
+        // thresholds for hits, how high the frequency data has to be to register a hit
         this.thresholds = {
             highest: 91,
             high: 90,
@@ -34,18 +34,21 @@ export default class AudioManager {
             high: 98,
             medium: 95
         }
+        // rate of threshold decrease, when theres a hit its bumped up to the max, then it decreases by this rate
         this.thresholdRate = 0.1;
 
+        // unimplemented (for seeking audio)
         this.updatingSlider = false;
+
         // Audio
         this.audioAnalyser = null; // three.js audio analyser
         this.audioListener = null; // three.js audio listener
         this.audioContext = null; // web thingy for audio fx graph
         this.audio = null; // audio element
 
-        this.smoothingTimeConstant = 0.8; // how smooth the data is
+        this.smoothingTimeConstant = 0.8; // fft smoothing
 
-        // Song
+        // Song (default data, but is written over by the loadAudio function)
         this.song = {
             url: "./static/songs/Linkin Park Track 6.mp3",
             title: "Easier to Run",
@@ -54,16 +57,12 @@ export default class AudioManager {
             albumCover: "./static/album-covers/meteora.jpg",
             duration: 0
         }
-
+        // Timer for song elapsed time
         this.timer = null;
         this.timerElapsedTime = 0;
     }
 
     onHit(type) {
-        /*
-        console.log('hit : ', type);
-        console.log(this.pad(Math.round(this.thresholds.highest), 2), this.pad(Math.round(this.thresholds.high), 2), this.pad(Math.round(this.thresholds.medium), 2));
-        */
         if (type === 'highest') {
             this.thresholds.highest = this.thresholdMax.highest;
         } else if (type === 'high') {
@@ -71,7 +70,6 @@ export default class AudioManager {
         } else if (type === 'medium') {
             this.thresholds.medium = this.thresholdMax.medium;
         }
-        //console.log(this.pad(Math.round(this.thresholds.highest), 2), this.pad(Math.round(this.thresholds.high), 2), this.pad(Math.round(this.thresholds.medium), 2));
     }
 
     lowerThresholds() {
@@ -81,15 +79,18 @@ export default class AudioManager {
                 this.thresholds[key] = this.thresholdMin[key];
             }
         }
-        //console.log(this.pad(Math.round(this.thresholds.highest), 2), this.pad(Math.round(this.thresholds.high), 2), this.pad(Math.round(this.thresholds.medium), 2));
     }
 
     async loadAudio(audioUrl = this.song.url) {
         return new Promise((resolve, reject) => {
+            // create elapsed time timer (for song current time)
             this.timer = new THREE.Clock();
             this.timerElapsedTime = 0;
+
+            // create audio listener and audio element
             this.audioListener = new THREE.AudioListener();
             this.audio = new THREE.Audio(this.audioListener);
+
             // create fft
             this.audioAnalyser = new THREE.AudioAnalyser(this.audio, this.fftSize);
 
@@ -103,8 +104,11 @@ export default class AudioManager {
                 (buffer) => {
                     this.audio.setBuffer(buffer);
                     this.audio.setLoop(true);
+
                     this.audio.setVolume(document.getElementById("volumeSlider").value / 100);
+
                     this.audioContext = this.audio.context;
+
                     this.song.duration = String(Math.floor(buffer.duration/60) + ":" + Math.floor(buffer.duration%60));
                     resolve();
                 },
@@ -147,8 +151,6 @@ export default class AudioManager {
             }
         };
 
-        //console.log(ranges);
-
         // calculate average for each range
         Object.keys(ranges).forEach((range) => {
             const { start, end } = ranges[range];
@@ -166,10 +168,9 @@ export default class AudioManager {
             const result = (average * 0.9 + peak * 0.1);
             this.frequencyData[range] = this.normaliseValue(result);
         });
-        //console.log(this.pad(Math.round(this.frequencyData.low * 100), 2), this.pad(Math.round(this.frequencyData.mid * 100), 2), this.pad(Math.round(this.frequencyData.high * 100), 2));
     }
 
-    pad(num, size) { // make it two digits
+    pad(num, size) {
         let s = num + "";
         while (s.length < size) s = "0" + s;
         return s;
